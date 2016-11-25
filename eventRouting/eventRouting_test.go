@@ -1,7 +1,7 @@
 package eventRouting_test
 
 import (
-	. "github.com/cloudfoundry-community/firehose-to-syslog/caching/cachingfakes"
+	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching/cachingfakes"
 	. "github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
 	. "github.com/cloudfoundry-community/firehose-to-syslog/logging/loggingfakes"
 	. "github.com/cloudfoundry/sonde-go/events"
