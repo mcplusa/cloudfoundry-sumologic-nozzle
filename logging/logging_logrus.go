@@ -18,6 +18,7 @@ type LoggingLogrus struct {
 }
 
 func NewLogging(SyslogServerFlag string, SysLogProtocolFlag string, LogFormatterFlag string, DebugFlag bool) Logging {
+
 	return &LoggingLogrus{
 		Logger:           logrus.New(),
 		syslogServer:     SyslogServerFlag,
@@ -37,9 +38,10 @@ func (l *LoggingLogrus) Connect() bool {
 	} else {
 		l.Logger.Out = os.Stdout
 	}
-
+	//fmt.Println("using [%s] as l.syslogServer", l.syslogServer)
 	if l.syslogServer != "" {
 		hook, err := logrus_syslog.NewSyslogHook(l.syslogProtocol, l.syslogServer, syslog.LOG_INFO, "doppler")
+		//fmt.Println("error [%s] as l.syslogServer", err)
 		if err != nil {
 			LogError(fmt.Sprintf("Unable to connect to syslog server [%s]!\n", l.syslogServer), err.Error())
 		} else {

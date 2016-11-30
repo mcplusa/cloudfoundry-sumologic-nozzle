@@ -1,9 +1,9 @@
 package events_test
 
 import (
-	. "github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	. "github.com/cloudfoundry-community/firehose-to-syslog/caching/cachingfakes"
-	fevents "github.com/cloudfoundry-community/firehose-to-syslog/events"
+	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
+	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching/cachingfakes"
+	fevents "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/events"
 	. "github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

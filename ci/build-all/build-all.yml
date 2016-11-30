@@ -8,14 +8,14 @@ image_resource:
 
 
 inputs:
-  - name: firehose-to-syslog-ci
-    path: gopath/src/github.com/cloudfoundry-community/firehose-to-syslog/
+  - name: firehouse-to-sumologic-ci
+    path: gopath/src/bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/
   - name: version
 
 outputs:
-  - name: firehose-to-syslog-ci-build 
+  - name: firehouse-to-sumologic-ci-build 
   
 run:
-  path: gopath/src/github.com/cloudfoundry-community/firehose-to-syslog/ci/build-all/build-all
+  path: gopath/src/bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/ci/build-all/build-all
 params:
   VERSION_APP:

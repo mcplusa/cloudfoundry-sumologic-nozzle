@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/firehoseclient"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/firehoseclient"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/pkg/profile"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -124,7 +124,9 @@ func main() {
 		IdleTimeoutSeconds:     *keepAlive,
 		FirehoseSubscriptionID: *subscriptionId,
 	}
-
+	logging.LogStd(fmt.Sprintf("connect logging '%s'",loggingClient.Connect()), true)
+	logging.LogStd(fmt.Sprintf("using '%s' as syslogServer", syslogServer), true)
+	logging.LogStd(fmt.Sprintf("using '%s' as syslogServer",  *debug), true)
 	if loggingClient.Connect() || *debug {
 
 		logging.LogStd("Connected to Syslog Server! Connecting to Firehose...", true)

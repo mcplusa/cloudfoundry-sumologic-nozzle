@@ -7,9 +7,9 @@ image_resource:
     repository: getourneau/alpine-golang-bash
 
 inputs:
-  - name: firehose-to-syslog-ci
-    path: gopath/src/github.com/cloudfoundry-community/firehose-to-syslog/
+  - name: firehouse-to-sumologic-ci
+    path: gopath/src/bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/
   
 run:
-  path: gopath/src/github.com/cloudfoundry-community/firehose-to-syslog/ci/unit-testing/unit-testing
+  path: gopath/src/bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/ci/unit-testing/unit-testing
 

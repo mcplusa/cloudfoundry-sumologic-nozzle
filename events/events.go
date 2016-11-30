@@ -3,8 +3,8 @@ package events
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	"github.com/cloudfoundry-community/firehose-to-syslog/utils"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/utils"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 

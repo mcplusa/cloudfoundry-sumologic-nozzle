@@ -1,5 +1,5 @@
 applications:
-- name: firehose-to-syslog
+- name: firehouse-to-sumologic
 env:
   API_ENDPOINT: https://api.bosh-lite.com
   DEBUG: false

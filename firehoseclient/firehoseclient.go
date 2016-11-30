@@ -2,8 +2,8 @@ package firehoseclient
 
 import (
 	"crypto/tls"
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
