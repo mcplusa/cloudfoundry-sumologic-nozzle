@@ -21,14 +21,8 @@ func newSumoLogicAppender(urlValue string, connectionTimeoutValue int) *SumoLogi
 	}
 }
 
-func (boolean) isInitialized() {
-	return httpClient != nil
-}
-
-func append(Event map[string]interface{}, Message string) {
-	if !checkEntryConditions() {
-		return
-	}
+func (s *SumoLogicAppender) append(Event map[string]interface{}, Message string) {
+	Event["msg"] = Message
 	var buffer bytes.Buffer
 	buffer.WriteString(event)
 	reader := bufio.NewReader(resp.Body)
