@@ -1,8 +1,8 @@
 package sumoLogicAppender
 
 import (
-	"bufio"
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -21,43 +21,17 @@ func newSumoLogicAppender(urlValue string, connectionTimeoutValue int) *SumoLogi
 	}
 }
 
-func (s *SumoLogicAppender) append(Event map[string]interface{}, Message string) {
+func (s *SumoLogicAppender) appendToSumo(Event map[string]interface{}, Message string) {
+	//adding the message to the map
 	Event["msg"] = Message
-	var buffer bytes.Buffer
-	buffer.WriteString(event)
-	reader := bufio.NewReader(resp.Body)
-	for {
-		line, err := reader.ReadBytes('\n')
-		//...
-		//log.Println(string(line))
-	}
-
-	sendToSumo(buffer.String())
-}
-
-func (boolean) checkEntryConditions() {
-	if httpClient == nil {
-		return false
-	}
-	return true
-}
-
-func senToSumo(log string) {
-	if !checkEntryConditions() {
-		return
-	}
-	request, err := http.NewRequest("POST", url, bytes.NewBufferString(log))
-	//request.SetBasicAuth("admin", "admin")
-	response, err := httpClient.Do(request)
-	if !err {
-		jghjk
+	jsonEvent, err := json.Marshal(Event)
+	request, err := http.NewRequest("POST", s.url, bytes.NewBuffer(jsonEvent))
+	response, err := s.httpClient.Do(request)
+	if err != nil {
 		if response.StatusCode != 200 {
 			//log print "Received HTTP error from Sumo Service:"
 		}
 		//consume the body if you want to re-use the connection
-	} else {
-		log.Fatal(err)
 	}
 	defer response.Body.Close()
-
 }
