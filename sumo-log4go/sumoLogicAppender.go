@@ -1,92 +1,69 @@
 package sumoLogicAppender
 
-import(
+import (
+	"bufio"
+	"bytes"
 	"net/http"
-	"net/url"
-    "bytes"
-    "log"
-    "io/ioutil"
-    "time"
-    "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
-
+	"time"
 )
 
-type sumoLogicAppender struct{
-    string url = nil
-    int connectionTimeout = 1000
-    //int socketTimeout = 60000
-    http.Client httpClient = nil
+type SumoLogicAppender struct {
+	url               string
+	connectionTimeout int //10000
+	httpClient        http.Client
 }
 
-// setUrl receives a pointer to sumoLogicAppender so it can modify it.
-func (s *sumoLogicAppender) setUrl(string url) {
-    s.url = url
-}
-
-// connectionTimeout receives a pointer to sumoLogicAppender so it can modify it.
-func (s *sumoLogicAppender) connectionTimeout(int connectionTimeout) {
-    s.connectionTimeout = connectionTimeout
-}
-
-// socketTimeout receives a pointer to sumoLogicAppender so it can modify it.
-func (s *sumoLogicAppender) socketTimeout(int socketTimeout) {
-    s.socketTimeout = socketTimeout
+func newSumoLogicAppender(urlValue string, connectionTimeoutValue int) *SumoLogicAppender {
+	return &SumoLogicAppender{
+		url:               urlValue,
+		connectionTimeout: connectionTimeoutValue,
+		httpClient:        http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
+	}
 }
 
 func (boolean) isInitialized() {
-    return httpClient != nil;
+	return httpClient != nil
 }
 
-func activateOptions(){
-    httpClient := {
-        Timeout: connectionTimeout * time.Millisecod,
-    }
-}
+func append(Event map[string]interface{}, Message string) {
+	if !checkEntryConditions() {
+		return
+	}
+	var buffer bytes.Buffer
+	buffer.WriteString(event)
+	reader := bufio.NewReader(resp.Body)
+	for {
+		line, err := reader.ReadBytes('\n')
+		//...
+		//log.Println(string(line))
+	}
 
-
-func append(Event event){
-    if !checkEntryConditions() {
-        return
-    }
-    var buffer bytes.Buffer
-    buffer.WriteString(event)
-    reader := bufio.NewReader(resp.Body)
-    for {
-        line, err := reader.ReadBytes('\n')
-        //...
-        //log.Println(string(line))
-    }
-
-
-    sendToSumo(buffer.String())
+	sendToSumo(buffer.String())
 }
 
 func (boolean) checkEntryConditions() {
-    if httpClient==nil {
-        return false
-    }
-    return true
+	if httpClient == nil {
+		return false
+	}
+	return true
 }
 
-
-func senToSumo(string log){
-    if !checkEntryConditions() {
-        return
-    }
-    request, err := http.NewRequest("POST", url, bytes.NewBufferString(log))
-    //request.SetBasicAuth("admin", "admin")
-    response, err := httpClient.Do(request)
-    if !err {
-       if response.StatusCode !=200 {
-           //log print "Received HTTP error from Sumo Service:"
-       }
-       //consume the body if you want to re-use the connection
-    }else{
-        log.Fatal(err)
-    }
-    defer response.Body.Close()
+func senToSumo(log string) {
+	if !checkEntryConditions() {
+		return
+	}
+	request, err := http.NewRequest("POST", url, bytes.NewBufferString(log))
+	//request.SetBasicAuth("admin", "admin")
+	response, err := httpClient.Do(request)
+	if !err {
+		jghjk
+		if response.StatusCode != 200 {
+			//log print "Received HTTP error from Sumo Service:"
+		}
+		//consume the body if you want to re-use the connection
+	} else {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
 
 }
-
-
-
