@@ -4,6 +4,7 @@ import (
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching/cachingfakes"
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging/loggingfakes"
+	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoLog4go/sumoLog4gofakes" //**
 	. "github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,7 +17,8 @@ var _ = Describe("Events", func() {
 	BeforeEach(func() {
 		logging := new(FakeLogging)
 		caching := new(FakeCaching)
-		eventRouting = NewEventRouting(caching, logging)
+		sLAppender := new(FakeSumoLog4go)
+		eventRouting = NewEventRouting(caching, logging, sLAppender)
 		eventRouting.SetupEventRouting("")
 
 	})

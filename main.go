@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/firehoseclient"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoLog4go"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/pkg/profile"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -17,8 +19,8 @@ var (
 	debug              = kingpin.Flag("debug", "Enable debug mode. This disables forwarding to syslog").Default("false").OverrideDefaultFromEnvar("DEBUG").Bool()
 	apiEndpoint        = "https://api.bosh-lite.com" //kingpin.Flag("api-endpoint", "Api endpoint address. For bosh-lite installation of CF: https://api.10.244.0.34.xip.io").OverrideDefaultFromEnvar("API_ENDPOINT").Required().String()
 	dopplerEndpoint    = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
-	syslogServer       = "192.168.33.10:514"//kingpin.Flag("syslog-server", "Syslog server.").OverrideDefaultFromEnvar("SYSLOG_ENDPOINT").String()
-	syslogProtocol     = "udp"//kingpin.Flag("syslog-protocol", "Syslog protocol (tcp/udp).").Default("tcp").OverrideDefaultFromEnvar("SYSLOG_PROTOCOL").String()
+	syslogServer       = "192.168.33.10:514" //kingpin.Flag("syslog-server", "Syslog server.").OverrideDefaultFromEnvar("SYSLOG_ENDPOINT").String()
+	syslogProtocol     = "udp"               //kingpin.Flag("syslog-protocol", "Syslog protocol (tcp/udp).").Default("tcp").OverrideDefaultFromEnvar("SYSLOG_PROTOCOL").String()
 	subscriptionId     = kingpin.Flag("subscription-id", "Id for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
 	user               = kingpin.Flag("user", "Admin user.").Default("admin").OverrideDefaultFromEnvar("FIREHOSE_USER").String()
 	password           = kingpin.Flag("password", "Admin password.").Default("admin").OverrideDefaultFromEnvar("FIREHOSE_PASSWORD").String()
@@ -45,11 +47,12 @@ func main() {
 
 	//Setup Logging
 	loggingClient := logging.NewLogging(syslogServer, syslogProtocol, *logFormatterType, *debug)
-	//loggingClient, err := syslog.Dial(syslogProtocol, syslogServer, syslog.LOG_ERR, "demotag") 
-         //defer loggingClient.Close()
-         //if err != nil {
-         //        log.Fatal("error")
-         //}
+	loggingClientSumo := sumoLog4go.NewSumoLogicAppender("http://httpbin.org/post", 1000)
+	//loggingClient, err := syslog.Dial(syslogProtocol, syslogServer, syslog.LOG_ERR, "demotag")
+	//defer loggingClient.Close()
+	//if err != nil {
+	//        log.Fatal("error")
+	//}
 	logging.LogStd(fmt.Sprintf("Starting firehose-to-syslog %s ", version), true)
 
 	if *modeProf != "" {
@@ -78,8 +81,8 @@ func main() {
 	}
 
 	logging.LogStd(fmt.Sprintf("Login with '%s' user", *user), true)
-  	logging.LogStd(fmt.Sprintf("using '%s' as user", c.Username), true)
-  	logging.LogStd(fmt.Sprintf("using '%s' as password", *password), true)
+	logging.LogStd(fmt.Sprintf("using '%s' as user", c.Username), true)
+	logging.LogStd(fmt.Sprintf("using '%s' as password", *password), true)
 
 	logging.LogStd(fmt.Sprintf("Using %s as doppler endpoint", cfClient.Endpoint.DopplerEndpoint), true)
 
@@ -91,7 +94,7 @@ func main() {
 		cachingClient = caching.NewCachingEmpty()
 	}
 	//Creating Events
-	events := eventRouting.NewEventRouting(cachingClient, loggingClient)
+	events := eventRouting.NewEventRouting(cachingClient, loggingClient, loggingClientSumo)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		log.Fatal("Error setting up event routing: ", err)
@@ -124,12 +127,12 @@ func main() {
 		IdleTimeoutSeconds:     *keepAlive,
 		FirehoseSubscriptionID: *subscriptionId,
 	}
-	logging.LogStd(fmt.Sprintf("connect logging '%s'",loggingClient.Connect()), true)
-	logging.LogStd(fmt.Sprintf("using '%s' as syslogServer", syslogServer), true)
-	logging.LogStd(fmt.Sprintf("using '%s' as syslogServer",  *debug), true)
+	//	logging.LogStd(fmt.Sprintf("connect logging '%s'", loggingClient.Connect()), true)
+	//logging.LogStd(fmt.Sprintf("using '%s' as syslogServer", syslogServer), true)
+	//logging.LogStd(fmt.Sprintf("using '%s' as syslogServer", *debug), true)
 	if loggingClient.Connect() || *debug {
 
-		logging.LogStd("Connected to Syslog Server! Connecting to Firehose...", true)
+		logging.LogStd("Connected to Server! Connecting to Firehose...", true)
 		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
 		err = firehoseClient.Start()
 		if err != nil {
