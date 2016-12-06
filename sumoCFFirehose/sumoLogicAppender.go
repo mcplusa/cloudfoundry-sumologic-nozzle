@@ -1,4 +1,4 @@
-package sumoLog4go
+package sumoCFFirehose
 
 import (
 	"bytes"

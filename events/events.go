@@ -2,9 +2,10 @@ package events
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
+
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/utils"
+	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 

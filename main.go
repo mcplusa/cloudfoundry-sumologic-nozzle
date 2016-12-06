@@ -9,7 +9,7 @@ import (
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/firehoseclient"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoLog4go"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/pkg/profile"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -48,7 +48,7 @@ func main() {
 	//Setup Logging <-- this loggingClient has to be removed when sumoLog4go Library is working
 	loggingClient := logging.NewLogging(syslogServer, syslogProtocol, *logFormatterType, *debug)
 	//Setup Loggin with sumoLog4go library
-	loggingClientSumo := sumoLog4go.NewSumoLogicAppender("http://httpbin.org/post", 1000)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender("http://httpbin.org/post", 1000)
 
 	logging.LogStd(fmt.Sprintf("Starting firehose-to-sumo %s ", version), true)
 

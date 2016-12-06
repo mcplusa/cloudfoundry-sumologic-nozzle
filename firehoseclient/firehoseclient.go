@@ -2,13 +2,14 @@ package firehoseclient
 
 import (
 	"crypto/tls"
+	"time"
+
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
-	"time"
 )
 
 type FirehoseNozzle struct {

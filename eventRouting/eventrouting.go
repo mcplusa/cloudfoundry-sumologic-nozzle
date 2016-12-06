@@ -12,7 +12,7 @@ import (
 	fevents "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/events"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/extrafields"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoLog4go" //**
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose" //**
 	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry/sonde-go/events"
 )
@@ -22,12 +22,12 @@ type EventRouting struct {
 	selectedEvents      map[string]bool
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
-	sLAppender          sumoLog4go.SumoLog4go //**
+	sLAppender          sumoCFFirehose.SumoCFFirehose //**
 	log                 logging.Logging
 	ExtraFields         map[string]string
 }
 
-func NewEventRouting(caching caching.Caching, logging logging.Logging, sLAppender sumoLog4go.SumoLog4go) *EventRouting {
+func NewEventRouting(caching caching.Caching, logging logging.Logging, sLAppender sumoCFFirehose.SumoCFFirehose) *EventRouting {
 	return &EventRouting{
 		CachingClient:       caching,
 		selectedEvents:      make(map[string]bool),

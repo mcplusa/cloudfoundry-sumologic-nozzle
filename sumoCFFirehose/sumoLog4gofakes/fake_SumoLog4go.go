@@ -4,7 +4,7 @@ package sumoLog4gofakes
 import (
 	"sync"
 
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumolog4go"
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose"
 )
 
 type FakeSumoLog4go struct {
@@ -14,11 +14,10 @@ type FakeSumoLog4go struct {
 	connectReturns     struct {
 		result1 bool
 	}
-	AppendLogsStub        func(map[string]interface{}, string)
+	AppendLogsStub        func(map[string]interface{})
 	AppendLogsMutex       sync.RWMutex
 	AppendLogsArgsForCall []struct {
 		arg1 map[string]interface{}
-		arg2 string
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -49,16 +48,16 @@ func (fake *FakeSumoLog4go) ConnectReturns(result1 bool) {
 	}{result1}
 }
 
-func (fake *FakeSumoLog4go) AppendLogs(arg1 map[string]interface{}, arg2 string) {
+func (fake *FakeSumoLog4go) AppendLogs(arg1 map[string]interface{}) {
 	fake.AppendLogsMutex.Lock()
 	fake.AppendLogsArgsForCall = append(fake.AppendLogsArgsForCall, struct {
 		arg1 map[string]interface{}
-		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("ShipEvents", []interface{}{arg1, arg2})
+		//arg2 string
+	}{arg1 /*, arg2*/})
+	fake.recordInvocation("ShipEvents", []interface{}{arg1 /*, arg2*/})
 	fake.AppendLogsMutex.Unlock()
 	if fake.AppendLogsStub != nil {
-		fake.AppendLogsStub(arg1, arg2)
+		fake.AppendLogsStub(arg1 /*, arg2*/)
 	}
 }
 
@@ -68,10 +67,10 @@ func (fake *FakeSumoLog4go) ShipEventsCallCount() int {
 	return len(fake.AppendLogsArgsForCall)
 }
 
-func (fake *FakeSumoLog4go) ShipEventsArgsForCall(i int) (map[string]interface{}, string) {
+func (fake *FakeSumoLog4go) ShipEventsArgsForCall(i int) map[string]interface{} {
 	fake.AppendLogsMutex.RLock()
 	defer fake.AppendLogsMutex.RUnlock()
-	return fake.AppendLogsArgsForCall[i].arg1, fake.AppendLogsArgsForCall[i].arg2
+	return fake.AppendLogsArgsForCall[i].arg1
 }
 
 func (fake *FakeSumoLog4go) Invocations() map[string][][]interface{} {
@@ -96,4 +95,4 @@ func (fake *FakeSumoLog4go) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ sumoLog4go.SumoLog4go = new(FakeSumoLog4go)
+var _ sumoCFFirehose.SumoCFFirehose = new(FakeSumoLog4go)

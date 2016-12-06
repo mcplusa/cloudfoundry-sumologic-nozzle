@@ -1,6 +1,6 @@
-package sumoLog4go
+package sumoCFFirehose
 
-type SumoLog4go interface {
+type SumoCFFirehose interface {
 	Connect() bool
 	AppendLogs(map[string]interface{})
 }
