@@ -80,8 +80,8 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
-			e.sLAppender.AppendLogs(event.Fields, event.Msg) //**
-			e.log.ShipEvents(event.Fields, event.Msg)        // here we have to change the method for the one on sumoLogicAppender
+			e.sLAppender.AppendLogs(event.Fields)     //**
+			e.log.ShipEvents(event.Fields, event.Msg) // here we have to change the method for the one on sumoLogicAppender
 			e.selectedEventsCount[eventType.String()]++
 
 		}

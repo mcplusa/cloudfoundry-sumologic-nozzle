@@ -45,15 +45,12 @@ func main() {
 	kingpin.Version(version)
 	kingpin.Parse()
 
-	//Setup Logging
+	//Setup Logging <-- this loggingClient has to be removed when sumoLog4go Library is working
 	loggingClient := logging.NewLogging(syslogServer, syslogProtocol, *logFormatterType, *debug)
+	//Setup Loggin with sumoLog4go library
 	loggingClientSumo := sumoLog4go.NewSumoLogicAppender("http://httpbin.org/post", 1000)
-	//loggingClient, err := syslog.Dial(syslogProtocol, syslogServer, syslog.LOG_ERR, "demotag")
-	//defer loggingClient.Close()
-	//if err != nil {
-	//        log.Fatal("error")
-	//}
-	logging.LogStd(fmt.Sprintf("Starting firehose-to-syslog %s ", version), true)
+
+	logging.LogStd(fmt.Sprintf("Starting firehose-to-sumo %s ", version), true)
 
 	if *modeProf != "" {
 		switch *modeProf {
@@ -79,12 +76,6 @@ func main() {
 	if len(*dopplerEndpoint) > 0 {
 		cfClient.Endpoint.DopplerEndpoint = *dopplerEndpoint
 	}
-
-	logging.LogStd(fmt.Sprintf("Login with '%s' user", *user), true)
-	logging.LogStd(fmt.Sprintf("using '%s' as user", c.Username), true)
-	logging.LogStd(fmt.Sprintf("using '%s' as password", *password), true)
-
-	logging.LogStd(fmt.Sprintf("Using %s as doppler endpoint", cfClient.Endpoint.DopplerEndpoint), true)
 
 	//Creating Caching
 	var cachingClient caching.Caching
@@ -127,10 +118,8 @@ func main() {
 		IdleTimeoutSeconds:     *keepAlive,
 		FirehoseSubscriptionID: *subscriptionId,
 	}
-	//	logging.LogStd(fmt.Sprintf("connect logging '%s'", loggingClient.Connect()), true)
-	//logging.LogStd(fmt.Sprintf("using '%s' as syslogServer", syslogServer), true)
-	//logging.LogStd(fmt.Sprintf("using '%s' as syslogServer", *debug), true)
-	if loggingClient.Connect() || *debug {
+
+	if /*loggingClientSumo.Connect() ||*/ *debug {
 
 		logging.LogStd("Connected to Server! Connecting to Firehose...", true)
 		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
