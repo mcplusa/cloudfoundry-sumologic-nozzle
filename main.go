@@ -9,7 +9,6 @@ import (
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/firehoseclient"
-	//*"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -18,6 +17,7 @@ import (
 var (
 	debug             = true //debug", "Enable debug mode, print in console
 	apiEndpoint       = "https://api.bosh-lite.com"
+	sumoEndpoint      = kingpin.Flag("sumo-endpoint", "Sumo Endpoint").String()
 	dopplerEndpoint   = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
 	subscriptionId    = kingpin.Flag("subscription-id", "Id for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
 	user              = "firehose_user"     //user created in CF, authorized to connect the firehose
@@ -37,7 +37,9 @@ func main() {
 	kingpin.Version(version)
 	kingpin.Parse()
 
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender("http://httpbin.org/post", 1000)
+	fmt.Println("this is the sumo endpoint")
+	fmt.Println(sumoEndpoint)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000)
 
 	fmt.Printf("Starting firehose-to-sumo %s \n", version)
 
@@ -91,6 +93,7 @@ func main() {
 		fmt.Printf("Connected to Server! Connecting to Firehose... \n")
 		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
 		err = firehoseClient.Start()
+		fmt.Printf("I created the Firehose... \n")
 		if err != nil {
 			fmt.Printf("Failed connecting to Firehose...Please check settings and try again! \n") //Log error
 
