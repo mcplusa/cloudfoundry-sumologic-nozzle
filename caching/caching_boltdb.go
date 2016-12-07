@@ -2,13 +2,16 @@ package caching
 
 import (
 	"fmt"
+
 	"github.com/boltdb/bolt"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
-	cfClient "github.com/cloudfoundry-community/go-cfclient"
-	json "github.com/mailru/easyjson"
+	//"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
 	"log"
 	"os"
 	"time"
+
+	"github.com/cloudfoundry-community/firehose-to-syslog1/logging"
+	cfClient "github.com/cloudfoundry-community/go-cfclient"
+	json "github.com/mailru/easyjson"
 )
 
 type CachingBolt struct {

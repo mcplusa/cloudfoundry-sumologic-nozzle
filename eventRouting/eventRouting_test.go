@@ -3,7 +3,6 @@ package eventRouting_test
 import (
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching/cachingfakes"
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
-	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging/loggingfakes"
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose/sumoLog4gofakes" //**
 	. "github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
@@ -15,10 +14,10 @@ var _ = Describe("Events", func() {
 	var eventRouting *EventRouting
 
 	BeforeEach(func() {
-		logging := new(FakeLogging)
+		//*logging := new(FakeLogging)
 		caching := new(FakeCaching)
 		sLAppender := new(FakeSumoLog4go)
-		eventRouting = NewEventRouting(caching, logging, sLAppender)
+		eventRouting = NewEventRouting(caching, sLAppender)
 		eventRouting.SetupEventRouting("")
 
 	})

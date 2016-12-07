@@ -41,6 +41,7 @@ func (s *SumoLogicAppender) Connect() bool {
 
 func (s *SumoLogicAppender) AppendLogs(Event map[string]interface{}) {
 	//adding the message to the map
+	//fmt.Printf("I'm in AppendLogs method")
 	if Event == nil {
 		return
 	}
