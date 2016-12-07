@@ -2,7 +2,6 @@ package eventRouting
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -12,8 +11,6 @@ import (
 	fevents "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/events"
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose"
 	"github.com/Sirupsen/logrus"
-	"github.com/cloudfoundry-community/firehose-to-syslog1/extrafields"
-	"github.com/cloudfoundry-community/firehose-to-syslog1/logging"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
@@ -24,7 +21,6 @@ type EventRouting struct {
 	mutex               *sync.Mutex
 	sLAppender          sumoCFFirehose.SumoCFFirehose //**
 	//*log                 logging.Logging
-	ExtraFields map[string]string
 }
 
 func NewEventRouting(caching caching.Caching, sLAppender sumoCFFirehose.SumoCFFirehose) *EventRouting {
@@ -34,8 +30,7 @@ func NewEventRouting(caching caching.Caching, sLAppender sumoCFFirehose.SumoCFFi
 		selectedEventsCount: make(map[string]uint64),
 		sLAppender:          sLAppender, //**
 		//*		log:                 logging,
-		mutex:       &sync.Mutex{},
-		ExtraFields: make(map[string]string),
+		mutex: &sync.Mutex{},
 	}
 }
 
@@ -70,7 +65,6 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 
 		event.AnnotateWithEnveloppeData(msg)
 
-		event.AnnotateWithMetaData(e.ExtraFields)
 		if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
 			event.AnnotateWithAppData(e.CachingClient)
 		}
@@ -106,16 +100,6 @@ func (e *EventRouting) SetupEventRouting(wantedEvents string) error {
 		}
 	}
 	return nil
-}
-
-func (e *EventRouting) SetExtraFields(extraEventsString string) {
-	// Parse extra fields from cmd call
-	extraFields, err := extrafields.ParseExtraFields(extraEventsString)
-	if err != nil {
-		logging.LogError("Error parsing extra fields: ", err)
-		os.Exit(1)
-	}
-	e.ExtraFields = extraFields
 }
 
 func (e *EventRouting) isAuthorizedEvent(wantedEvent string) bool {

@@ -60,13 +60,6 @@ var _ = Describe("Events", func() {
 		})
 	})
 
-	Context("called with extrafield", func() {
-		It("Shoud return correct extrafields", func() {
-			eventRouting.SetExtraFields("dev:env")
-			Expect(eventRouting.ExtraFields).To(Equal(map[string]string{"dev": "env"}))
-		})
-	})
-
 	Context("GetListAuthorizedEventEvents", func() {
 		It("should return right list of authorized events", func() {
 			Expect(GetListAuthorizedEventEvents()).To(Equal("ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric"))

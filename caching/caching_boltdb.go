@@ -3,13 +3,11 @@ package caching
 import (
 	"fmt"
 
-	"github.com/boltdb/bolt"
-	//"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
 	"log"
 	"os"
 	"time"
 
-	"github.com/cloudfoundry-community/firehose-to-syslog1/logging"
+	"github.com/boltdb/bolt"
 	cfClient "github.com/cloudfoundry-community/go-cfclient"
 	json "github.com/mailru/easyjson"
 )
@@ -107,12 +105,11 @@ func (c *CachingBolt) GetAppByGuid(appGuid string) []App {
 
 func (c *CachingBolt) GetAllApp() []App {
 
-	logging.LogStd("Retrieving Apps for Cache...", false)
 	var apps []App
 
 	defer func() {
 		if r := recover(); r != nil {
-			logging.LogError("Recovered in caching.GetAllApp()", r)
+			//logging.LogError("Recovered in caching.GetAllApp()", r)
 		}
 	}()
 
@@ -122,7 +119,7 @@ func (c *CachingBolt) GetAllApp() []App {
 	}
 
 	for _, app := range cfApps {
-		logging.LogStd(fmt.Sprintf("App [%s] Found...", app.Name), false)
+		fmt.Printf("App [%s] Found... \n", app.Name)
 		apps = append(apps, App{
 			app.Name,
 			app.Guid,
@@ -135,7 +132,7 @@ func (c *CachingBolt) GetAllApp() []App {
 	}
 
 	c.fillDatabase(apps)
-	logging.LogStd(fmt.Sprintf("Found [%d] Apps!", len(apps)), false)
+	fmt.Printf("Found [%d] Apps!", len(apps))
 
 	return apps
 }
@@ -145,7 +142,6 @@ func (c *CachingBolt) GetAppInfo(appGuid string) App {
 	var d []byte
 	var app App
 	c.Appdb.View(func(tx *bolt.Tx) error {
-		logging.LogStd(fmt.Sprintf("Looking for App %s in Cache!\n", appGuid), false)
 		b := tx.Bucket([]byte("AppBucket"))
 		d = b.Get([]byte(appGuid))
 		return nil
