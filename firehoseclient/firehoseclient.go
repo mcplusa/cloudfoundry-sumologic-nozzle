@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
+	//*"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
+
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -75,22 +76,22 @@ func (f *FirehoseNozzle) handleError(err error) {
 
 	switch {
 	case websocket.IsCloseError(err, websocket.CloseNormalClosure):
-		logging.LogError("Normal Websocket Closure", err)
+		//logging.LogError("Normal Websocket Closure", err)
 	case websocket.IsCloseError(err, websocket.ClosePolicyViolation):
-		logging.LogError("Error while reading from the firehose", err)
-		logging.LogError("Disconnected because nozzle couldn't keep up. Please try scaling up the nozzle.", nil)
+		//logging.LogError("Error while reading from the firehose", err)
+		//logging.LogError("Disconnected because nozzle couldn't keep up. Please try scaling up the nozzle.", nil)
 
 	default:
-		logging.LogError("Error while reading from the firehose", err)
+		//logging.LogError("Error while reading from the firehose", err)
 	}
 
-	logging.LogError("Closing connection with traffic controller due to error", err)
+	//logging.LogError("Closing connection with traffic controller due to error", err)
 	f.consumer.Close()
 }
 
 func (f *FirehoseNozzle) handleMessage(envelope *events.Envelope) {
 	if envelope.GetEventType() == events.Envelope_CounterEvent && envelope.CounterEvent.GetName() == "TruncatingBuffer.DroppedMessages" && envelope.GetOrigin() == "doppler" {
-		logging.LogStd("We've intercepted an upstream message which indicates that the nozzle or the TrafficController is not keeping up. Please try scaling up the nozzle.", true)
+		//logging.LogStd("We've intercepted an upstream message which indicates that the nozzle or the TrafficController is not keeping up. Please try scaling up the nozzle.", true)
 	}
 }
 

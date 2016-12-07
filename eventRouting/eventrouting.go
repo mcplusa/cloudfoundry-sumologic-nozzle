@@ -2,7 +2,6 @@ package eventRouting
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -10,9 +9,7 @@ import (
 
 	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
 	fevents "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/events"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/extrafields"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose" //**
+	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose"
 	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry/sonde-go/events"
 )
@@ -23,19 +20,17 @@ type EventRouting struct {
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
 	sLAppender          sumoCFFirehose.SumoCFFirehose //**
-	log                 logging.Logging
-	ExtraFields         map[string]string
+	//*log                 logging.Logging
 }
 
-func NewEventRouting(caching caching.Caching, logging logging.Logging, sLAppender sumoCFFirehose.SumoCFFirehose) *EventRouting {
+func NewEventRouting(caching caching.Caching, sLAppender sumoCFFirehose.SumoCFFirehose) *EventRouting {
 	return &EventRouting{
 		CachingClient:       caching,
 		selectedEvents:      make(map[string]bool),
 		selectedEventsCount: make(map[string]uint64),
 		sLAppender:          sLAppender, //**
-		log:                 logging,
-		mutex:               &sync.Mutex{},
-		ExtraFields:         make(map[string]string),
+		//*		log:                 logging,
+		mutex: &sync.Mutex{},
 	}
 }
 
@@ -70,7 +65,6 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 
 		event.AnnotateWithEnveloppeData(msg)
 
-		event.AnnotateWithMetaData(e.ExtraFields)
 		if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
 			event.AnnotateWithAppData(e.CachingClient)
 		}
@@ -80,8 +74,10 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
-			e.sLAppender.AppendLogs(event.Fields)     //**
-			e.log.ShipEvents(event.Fields, event.Msg) // here we have to change the method for the one on sumoLogicAppender
+			/*fmt.Printf("I'm in eventRpouting method .. -------")
+			fmt.Println(event.Fields)
+			fmt.Println(event.Msg)*/
+			e.sLAppender.AppendLogs(event.Fields) //**/here we have to change the method for the one on sumoLogicAppender
 			e.selectedEventsCount[eventType.String()]++
 
 		}
@@ -97,23 +93,13 @@ func (e *EventRouting) SetupEventRouting(wantedEvents string) error {
 		for _, event := range strings.Split(wantedEvents, ",") {
 			if e.isAuthorizedEvent(strings.TrimSpace(event)) {
 				e.selectedEvents[strings.TrimSpace(event)] = true
-				logging.LogStd(fmt.Sprintf("Event Type [%s] is included in the fireshose!", event), false)
+				//logging.LogStd(fmt.Sprintf("Event Type [%s] is included in the fireshose!", event), false)
 			} else {
 				return fmt.Errorf("Rejected Event Name [%s] - Valid events: %s", event, GetListAuthorizedEventEvents())
 			}
 		}
 	}
 	return nil
-}
-
-func (e *EventRouting) SetExtraFields(extraEventsString string) {
-	// Parse extra fields from cmd call
-	extraFields, err := extrafields.ParseExtraFields(extraEventsString)
-	if err != nil {
-		logging.LogError("Error parsing extra fields: ", err)
-		os.Exit(1)
-	}
-	e.ExtraFields = extraFields
 }
 
 func (e *EventRouting) isAuthorizedEvent(wantedEvent string) bool {
@@ -159,7 +145,8 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 			startTime = time.Now()
 			event, lastCount := e.getEventTotals(totalElapsedTime, elapsedTime, count)
 			count = lastCount
-			e.log.ShipEvents(event.Fields, event.Msg)
+			//*e.log.ShipEvents(event.Fields, event.Msg)
+			e.sLAppender.AppendLogs(event.Fields)
 		}
 	}()
 }

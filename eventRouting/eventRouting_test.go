@@ -3,7 +3,6 @@ package eventRouting_test
 import (
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching/cachingfakes"
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
-	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/logging/loggingfakes"
 	. "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose/sumoLog4gofakes" //**
 	. "github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
@@ -15,10 +14,10 @@ var _ = Describe("Events", func() {
 	var eventRouting *EventRouting
 
 	BeforeEach(func() {
-		logging := new(FakeLogging)
+		//*logging := new(FakeLogging)
 		caching := new(FakeCaching)
 		sLAppender := new(FakeSumoLog4go)
-		eventRouting = NewEventRouting(caching, logging, sLAppender)
+		eventRouting = NewEventRouting(caching, sLAppender)
 		eventRouting.SetupEventRouting("")
 
 	})
@@ -58,13 +57,6 @@ var _ = Describe("Events", func() {
 
 		It("should return a total of 10", func() {
 			Expect(eventRouting.GetTotalCountOfSelectedEvents()).To(Equal(expected))
-		})
-	})
-
-	Context("called with extrafield", func() {
-		It("Shoud return correct extrafields", func() {
-			eventRouting.SetExtraFields("dev:env")
-			Expect(eventRouting.ExtraFields).To(Equal(map[string]string{"dev": "env"}))
 		})
 	})
 
