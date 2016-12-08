@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/firehoseclient"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/firehoseclient"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"gopkg.in/alecthomas/kingpin.v2"
 )

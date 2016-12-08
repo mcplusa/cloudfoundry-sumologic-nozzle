@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/eventRouting"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"

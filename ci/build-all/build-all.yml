@@ -8,14 +8,14 @@ image_resource:
 
 
 inputs:
-  - name: firehouse-to-sumologic-ci
-    path: gopath/src/bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/
+  - name: firehose-to-sumologic-ci
+    path: gopath/src/bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/
   - name: version
 
 outputs:
-  - name: firehouse-to-sumologic-ci-build 
-  
+  - name: firehose-to-sumologic-ci-build
+
 run:
-  path: gopath/src/bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/ci/build-all/build-all
+  path: gopath/src/bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/ci/build-all/build-all
 params:
   VERSION_APP:

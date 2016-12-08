@@ -3,8 +3,8 @@ package events
 import (
 	"fmt"
 
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/utils"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/utils"
 	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry/sonde-go/events"
 )

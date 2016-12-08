@@ -8,7 +8,7 @@ export PATH=$GOPATH/bin:$PATH
 go get github.com/onsi/ginkgo/ginkgo
 go get github.com/onsi/gomega
 
-cd $GOPATH/src/bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/
+cd $GOPATH/src/bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/
 
 
 make test

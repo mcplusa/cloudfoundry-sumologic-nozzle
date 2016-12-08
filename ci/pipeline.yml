@@ -1,7 +1,7 @@
 ---
 groups:
-  - name: firehouse-to-sumologic
-    jobs: 
+  - name: firehose-to-sumologic
+    jobs:
     - unit-testing
     - downstream-master
     - unit-testing-master
@@ -24,37 +24,37 @@ jobs:
   public: true
   serial: true
   plan:
-   - get: firehouse-to-sumologic-ci 
-     resource: firehouse-to-sumologic-develop
+   - get: firehose-to-sumologic-ci
+     resource: firehose-to-sumologic-develop
      trigger: true
    - task: unit-testing
-     file: firehouse-to-sumologic-ci/ci/unit-testing/unit-testing.yml
-     
+     file: firehose-to-sumologic-ci/ci/unit-testing/unit-testing.yml
+
 
 - name: unit-testing-master
   public: true
   serial: true
   plan:
-  - get: firehouse-to-sumologic-ci
-    resource: firehouse-to-sumologic-master 
+  - get: firehose-to-sumologic-ci
+    resource: firehose-to-sumologic-master
     trigger: true
   - task: unit-testing
-    file: firehouse-to-sumologic-ci/ci/unit-testing/unit-testing.yml
+    file: firehose-to-sumologic-ci/ci/unit-testing/unit-testing.yml
 
 
 - name: tag-master
   public: true
   serial: true
-  plan:  
-  - get: firehouse-to-sumologic-ci
-    resource: firehouse-to-sumologic-master 
+  plan:
+  - get: firehose-to-sumologic-ci
+    resource: firehose-to-sumologic-master
     passed: [unit-testing-master]
   - put: version
     params: {bump: minor}
-  - put: firehouse-to-sumologic-master 
-    params: 
+  - put: firehose-to-sumologic-master
+    params:
       only_tag: true
-      repository: firehouse-to-sumologic-ci
+      repository: firehose-to-sumologic-ci
       tag: version/number
 
 
@@ -62,13 +62,13 @@ jobs:
   public: true
   serial: true
   plan:
-  - get: firehouse-to-sumologic-ci
-    resource: firehouse-to-sumologic-master 
+  - get: firehose-to-sumologic-ci
+    resource: firehose-to-sumologic-master
     passed: [tag-master]
     trigger: true
   - get: version
   - task: build-binary
-    file: firehouse-to-sumologic-ci/ci/build-all/build-all.yml
+    file: firehose-to-sumologic-ci/ci/build-all/build-all.yml
     params:
       VERSION_APP: version/number
   - put: gh-release
@@ -76,7 +76,7 @@ jobs:
       name: version/number
       tag: version/number
       globs:
-      - firehouse-to-sumologic-ci-build/dist/*/*/*
+      - firehose-to-sumologic-ci-build/dist/*/*/*
 
 
 
@@ -86,16 +86,16 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: firehouse-to-sumologic-ci
-      resource: firehouse-to-sumologic-develop
+    - get: firehose-to-sumologic-ci
+      resource: firehose-to-sumologic-develop
     - get: release-repo-master
-      resource: firehouse-to-sumologic-master 
+      resource: firehouse-to-sumologic-master
       trigger: true
       passed: [tag-master]
     - get: release-repo
-      resource: firehouse-to-sumologic-merge-target
+      resource: firehose-to-sumologic-merge-target
   - task: merge-master-to-develop
-    file: firehouse-to-sumologic-ci/ci/merge-master-to-develop/merge-master-to-develop.yml
+    file: firehose-to-sumologic-ci/ci/merge-master-to-develop/merge-master-to-develop.yml
     params:
       GIT_USERNAME: {{github-username}}
       GIT_EMAIL:  {{github-email}}
@@ -104,17 +104,17 @@ jobs:
 
 
 resources:
-- name: firehouse-to-sumologic-merge-target
+- name: firehose-to-sumologic-merge-target
   type: git
   source:
     branch: develop
     private_key: {{private-key-github-concourse}}
-    uri: git@github.com:cloudfoundry-community/firehouse-to-sumologic.git
+    uri: git@github.com:cloudfoundry-community/firehose-to-sumologic.git
 
-- name: firehouse-to-sumologic-develop
+- name: firehose-to-sumologic-develop
   type: git
   source:
-    uri: git@github.com:cloudfoundry-community/firehouse-to-sumologic.git
+    uri: git@github.com:cloudfoundry-community/firehose-to-sumologic.git
     branch: develop
     private_key: {{private-key-github-concourse}}
 
@@ -131,14 +131,14 @@ resources:
   type: github-release
   source:
     user: cloudfoundry-community
-    repository: firehouse-to-sumologic
+    repository: firehose-to-sumologic
     access_token: {{github-access-token}}
 
 - name: version
   type: semver-gwenn
   source:
     driver: git
-    uri: git@github.com:cloudfoundry-community/firehouse-to-sumologic.git
+    uri: git@github.com:cloudfoundry-community/firehose-to-sumologic.git
     branch: version
     file: version
     private_key: {{private-key-github-concourse}}
@@ -151,5 +151,3 @@ resource_types:
   type: docker-image
   source:
     repository: getourneau/semver-resource
-
-

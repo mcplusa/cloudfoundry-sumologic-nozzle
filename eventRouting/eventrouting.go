@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
-	fevents "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/events"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
+	fevents "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
 	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry/sonde-go/events"
 )

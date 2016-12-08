@@ -1,1 +1,1 @@
-web: firehose-to-syslog
+web: firehose-to-sumologic
