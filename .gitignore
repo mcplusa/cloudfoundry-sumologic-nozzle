@@ -1,6 +1,6 @@
 # Add any directories, files, or patterns you don't want to be tracked by version control
 internal-core
-firehose-to-syslog*
+firehose-to-sumologic*
 events/events.test
 .project
 *.swp

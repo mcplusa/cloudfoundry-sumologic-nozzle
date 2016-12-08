@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/caching"
-	fevents "bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/events"
-	"bitbucket.org/mcplusa-ondemand/firehouse-to-sumologic/sumoCFFirehose"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
+	fevents "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
 	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry/sonde-go/events"
 )
@@ -74,10 +74,9 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
-			/*fmt.Printf("I'm in eventRpouting method .. -------")
-			fmt.Println(event.Fields)
+			/*fmt.Println("This is the message field")
 			fmt.Println(event.Msg)*/
-			e.sLAppender.AppendLogs(event.Fields) //**/here we have to change the method for the one on sumoLogicAppender
+			e.sLAppender.AppendLogs(event.Fields, event.Msg) //**/here we have to change the method for the one on sumoLogicAppender
 			e.selectedEventsCount[eventType.String()]++
 
 		}
@@ -146,7 +145,7 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 			event, lastCount := e.getEventTotals(totalElapsedTime, elapsedTime, count)
 			count = lastCount
 			//*e.log.ShipEvents(event.Fields, event.Msg)
-			e.sLAppender.AppendLogs(event.Fields)
+			e.sLAppender.AppendLogs(event.Fields, event.Msg)
 		}
 	}()
 }

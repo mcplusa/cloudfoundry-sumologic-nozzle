@@ -1,5 +1,5 @@
 applications:
-- name: firehouse-to-sumologic
+- name: firehose-to-sumologic
 env:
   API_ENDPOINT: https://api.bosh-lite.com
   DEBUG: false
@@ -7,7 +7,7 @@ env:
   EVENTS: LogMessage,ValueMetric,Error,ContainerMetric
   FIREHOSE_USER: firehose_user
   FIREHOSE_PASSWORD: firehose_admin
-  FIREHOSE_SUBSCRIPTION_ID: firehose-to-syslog
+  FIREHOSE_SUBSCRIPTION_ID: firehose-to-sumologic
   LOG_EVENT_TOTALS: true
   LOG_EVENT_TOTALS_TIME: 10s
   SKIP_SSL_VALIDATION: true

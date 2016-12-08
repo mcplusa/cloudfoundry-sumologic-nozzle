@@ -119,7 +119,7 @@ func (c *CachingBolt) GetAllApp() []App {
 	}
 
 	for _, app := range cfApps {
-		fmt.Printf("App [%s] Found... \n", app.Name)
+		//fmt.Printf("App [%s] Found... \n", app.Name)
 		apps = append(apps, App{
 			app.Name,
 			app.Guid,
@@ -132,7 +132,7 @@ func (c *CachingBolt) GetAllApp() []App {
 	}
 
 	c.fillDatabase(apps)
-	fmt.Printf("Found [%d] Apps!", len(apps))
+	//fmt.Printf("Found [%d] Apps!", len(apps))
 
 	return apps
 }

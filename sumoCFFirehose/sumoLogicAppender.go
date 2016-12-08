@@ -39,10 +39,10 @@ func (s *SumoLogicAppender) Connect() bool {
 	return success
 }
 
-func (s *SumoLogicAppender) AppendLogs(Event map[string]interface{}) {
+func (s *SumoLogicAppender) AppendLogs(fields map[string]interface{}, message string) {
 	//adding the message to the map
 	//fmt.Printf("I'm in AppendLogs method")
-	if Event == nil {
+	/*if Event == nil {
 		return
 	}
 
@@ -52,12 +52,16 @@ func (s *SumoLogicAppender) AppendLogs(Event map[string]interface{}) {
 
 	if Event["msg"] == "" {
 		return
-	}
-
-	Message := ""
-	Message = Event["msg"].(string) + "\n"
-
+	}*/
+	//timestampToInt, err := strconv.ParseInt(fields["timestamp"].(string), 10, 64)
+	//if err == nil {
+	//date := time.Unix(timestampToInt, 0)
+	Message := /*strconv.Itoa(fields["timestamp"]) + */ "\t" + fields["message_type"].(string) + "\t" + message
+	/*fmt.Println("---------------------I'm about to do an HTTP Post with this message-------------------")
+	fmt.Println(Message)
+	fmt.Println("---------------------------------------------------------------------------------------")*/
 	s.SendToSumo(Message)
+	//}
 
 }
 
@@ -67,7 +71,7 @@ func (s *SumoLogicAppender) SendToSumo(log string) {
 		fmt.Printf("http.NewRequest() error: %v\n", err)
 		return
 	}
-	request.Header.Add("content-type", "application/json")
+	//request.Header.Add("content-type", "application/json")
 	//request.SetBasicAuth("admin", "admin")
 	response, err := s.httpClient.Do(request)
 
