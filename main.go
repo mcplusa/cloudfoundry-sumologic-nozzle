@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/firehoseclient"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
@@ -62,8 +63,12 @@ func main() {
 	} else {
 		cachingClient = caching.NewCachingEmpty()
 	}
+
+	//Creating queue
+	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
+
 	//Creating Events
-	events := eventRouting.NewEventRouting(cachingClient, loggingClientSumo)
+	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, *queue)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		log.Fatal("Error setting up event routing: ", err)
@@ -91,6 +96,7 @@ func main() {
 	if /*loggingClientSumo.Connect() ||*/ debug {
 
 		fmt.Printf("Connected to Server! Connecting to Firehose... \n")
+
 		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
 		err = firehoseClient.Start()
 		fmt.Printf("I created the Firehose... \n")

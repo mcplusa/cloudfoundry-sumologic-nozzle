@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	fevents "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
 	"github.com/Sirupsen/logrus"
@@ -19,18 +20,18 @@ type EventRouting struct {
 	selectedEvents      map[string]bool
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
-	sLAppender          sumoCFFirehose.SumoCFFirehose //**
-	//*log                 logging.Logging
+	sLAppender          sumoCFFirehose.SumoLogicAppender //**
+	queue               eventQueue.Queue
 }
 
-func NewEventRouting(caching caching.Caching, sLAppender sumoCFFirehose.SumoCFFirehose) *EventRouting {
+func NewEventRouting(caching caching.Caching, sLAppender sumoCFFirehose.SumoLogicAppender, queue eventQueue.Queue) *EventRouting {
 	return &EventRouting{
 		CachingClient:       caching,
 		selectedEvents:      make(map[string]bool),
 		selectedEventsCount: make(map[string]uint64),
 		sLAppender:          sLAppender, //**
-		//*		log:                 logging,
-		mutex: &sync.Mutex{},
+		queue:               queue,
+		mutex:               &sync.Mutex{},
 	}
 }
 
@@ -74,9 +75,14 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
-			/*fmt.Println("This is the message field")
-			fmt.Println(event.Msg)*/
-			e.sLAppender.AppendLogs(event.Fields, event.Msg) //**/here we have to change the method for the one on sumoLogicAppender
+			if e.queue.Pop() != nil { //if the queue is not empty
+				fmt.Println("sendig event from queue to appender")
+				e.sLAppender.AppendLogs(e.queue.Pop().GetNodeEvent()) // send to appender event from queue
+			} else { //if the queue is empty, send the event to queue
+				fmt.Println(event.Msg)
+				fmt.Println("sendig event TO queue")
+				e.queue.Push(eventQueue.NewNode(*event))
+			}
 			e.selectedEventsCount[eventType.String()]++
 
 		}
@@ -145,7 +151,7 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 			event, lastCount := e.getEventTotals(totalElapsedTime, elapsedTime, count)
 			count = lastCount
 			//*e.log.ShipEvents(event.Fields, event.Msg)
-			e.sLAppender.AppendLogs(event.Fields, event.Msg)
+			e.sLAppender.AppendLogs(*event)
 		}
 	}()
 }
