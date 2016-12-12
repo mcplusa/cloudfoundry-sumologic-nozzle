@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
 )
 
 type SumoLogicAppender struct {
@@ -39,30 +41,22 @@ func (s *SumoLogicAppender) Connect() bool {
 	return success
 }
 
-func (s *SumoLogicAppender) AppendLogs(fields map[string]interface{}, message string) {
-	//adding the message to the map
-	//fmt.Printf("I'm in AppendLogs method")
-	/*if Event == nil {
+func (s *SumoLogicAppender) AppendLogs(event Event) {
+	/*
+		if event == nil {
+			return
+		}*/
+
+	if event.Fields["message_type"] == nil {
 		return
 	}
 
-	if Event["msg"] == nil {
+	if event.Fields["message_type"] == "" {
 		return
 	}
 
-	if Event["msg"] == "" {
-		return
-	}*/
-	//timestampToInt, err := strconv.ParseInt(fields["timestamp"].(string), 10, 64)
-	//if err == nil {
-	//date := time.Unix(timestampToInt, 0)
-	Message := /*strconv.Itoa(fields["timestamp"]) + */ "\t" + fields["message_type"].(string) + "\t" + message
-	/*fmt.Println("---------------------I'm about to do an HTTP Post with this message-------------------")
-	fmt.Println(Message)
-	fmt.Println("---------------------------------------------------------------------------------------")*/
+	Message := /*strconv.Itoa(fields["timestamp"]) + */ "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg
 	s.SendToSumo(Message)
-	//}
-
 }
 
 func (s *SumoLogicAppender) SendToSumo(log string) {
