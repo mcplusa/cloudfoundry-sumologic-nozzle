@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	//"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
 )
 
@@ -55,7 +56,7 @@ func (s *SumoLogicAppender) AppendLogs(event Event) {
 		return
 	}
 
-	Message := /*strconv.Itoa(fields["timestamp"]) + */ "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg
+	Message := /*strconv.Itoa(fields["timestamp"]) + */ "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
 	s.SendToSumo(Message)
 }
 

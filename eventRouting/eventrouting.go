@@ -75,14 +75,15 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
-			if e.queue.Pop() != nil { //if the queue is not empty
+			if e.queue.GetCount() == 10 { //if the queue has 10 elements, send to the appender (10 elements to wait to send to the appender?)
 				fmt.Println("sendig event from queue to appender")
 				e.sLAppender.AppendLogs(e.queue.Pop().GetNodeEvent()) // send to appender event from queue
 			} else { //if the queue is empty, send the event to queue
-				fmt.Println(event.Msg)
-				fmt.Println("sendig event TO queue")
+				/*fmt.Println(event.Fields["timestamp"])
+				fmt.Println("sendig event TO queue")*/
 				e.queue.Push(eventQueue.NewNode(*event))
 			}
+
 			e.selectedEventsCount[eventType.String()]++
 
 		}
