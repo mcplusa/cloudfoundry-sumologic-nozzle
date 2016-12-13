@@ -33,6 +33,10 @@ func (q *Queue) GetNode() []*Node {
 	return q.nodes
 }
 
+func (n *Queue) GetCount() int {
+	return n.count
+}
+
 func (n *Node) GetNodeEvent() Event {
 	return n.event
 }

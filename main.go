@@ -40,7 +40,10 @@ func main() {
 
 	fmt.Println("this is the sumo endpoint")
 	fmt.Println(sumoEndpoint)
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000)
+
+	//Creating queue
+	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue)
 
 	fmt.Printf("Starting firehose-to-sumo %s \n", version)
 
@@ -63,9 +66,6 @@ func main() {
 	} else {
 		cachingClient = caching.NewCachingEmpty()
 	}
-
-	//Creating queue
-	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
 
 	//Creating Events
 	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, *queue)

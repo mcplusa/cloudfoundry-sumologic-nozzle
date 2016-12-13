@@ -7,20 +7,22 @@ import (
 	"net/http"
 	"time"
 
-	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 )
 
 type SumoLogicAppender struct {
 	url               string
 	connectionTimeout int //10000
 	httpClient        http.Client
+	nozzleQueue       eventQueue.Queue
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:               urlValue,
 		connectionTimeout: connectionTimeoutValue,
 		httpClient:        http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
+		nozzleQueue:       nozzleQueue,
 	}
 }
 
@@ -41,7 +43,10 @@ func (s *SumoLogicAppender) Connect() bool {
 	return success
 }
 
-func (s *SumoLogicAppender) AppendLogs(event Event) {
+func (s *SumoLogicAppender) AppendLogs() {
+	// the appender calls for the next message in the queue and parse it to a string
+	fmt.Println("i'm in appendLogs")
+	event := s.nozzleQueue.Pop().GetNodeEvent()
 	/*
 		if event == nil {
 			return
@@ -55,7 +60,8 @@ func (s *SumoLogicAppender) AppendLogs(event Event) {
 		return
 	}
 
-	Message := /*strconv.Itoa(fields["timestamp"]) + */ "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg
+	Message := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
+	fmt.Println(Message)
 	s.SendToSumo(Message)
 }
 
