@@ -15,14 +15,16 @@ type SumoLogicAppender struct {
 	connectionTimeout int //10000
 	httpClient        http.Client
 	nozzleQueue       eventQueue.Queue
+	eventsAmount      int
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue, eventsAmount int) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:               urlValue,
 		connectionTimeout: connectionTimeoutValue,
 		httpClient:        http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
 		nozzleQueue:       nozzleQueue,
+		eventsAmount:      eventsAmount,
 	}
 }
 
@@ -44,25 +46,21 @@ func (s *SumoLogicAppender) Connect() bool {
 }
 
 func (s *SumoLogicAppender) AppendLogs() {
-	// the appender calls for the next message in the queue and parse it to a string
 	fmt.Println("i'm in appendLogs")
-	event := s.nozzleQueue.Pop().GetNodeEvent()
-	/*
-		if event == nil {
+	// the appender calls for the next message in the queue and parse it to a string
+	buf := new(bytes.Buffer)
+	for i := 0; i <= s.eventsAmount; i++ { //Pop eventsAmount from queue
+		event := s.nozzleQueue.Pop().GetNodeEvent()
+		if event.Fields["message_type"] == nil {
 			return
-		}*/
-
-	if event.Fields["message_type"] == nil {
-		return
+		}
+		if event.Fields["message_type"] == "" {
+			return
+		}
+		message := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
+		buf.WriteString(message)
 	}
-
-	if event.Fields["message_type"] == "" {
-		return
-	}
-
-	Message := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
-	fmt.Println(Message)
-	s.SendToSumo(Message)
+	s.SendToSumo(buf.String())
 }
 
 func (s *SumoLogicAppender) SendToSumo(log string) {

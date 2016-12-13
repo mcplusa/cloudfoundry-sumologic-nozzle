@@ -28,6 +28,7 @@ var (
 	wantedEvents      = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
 	boltDatabasePath  = "my.db"                   //default
 	tickerTime, errT  = time.ParseDuration("60s") //Default
+	eventsAmount      = kingpin.Flag("event-amount", "Events amount").Int()
 )
 
 var (
@@ -43,7 +44,7 @@ func main() {
 
 	//Creating queue
 	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue, *eventsAmount)
 
 	fmt.Printf("Starting firehose-to-sumo %s \n", version)
 
@@ -99,7 +100,6 @@ func main() {
 
 		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
 		err = firehoseClient.Start()
-		fmt.Printf("I created the Firehose... \n")
 		if err != nil {
 			fmt.Printf("Failed connecting to Firehose...Please check settings and try again! \n") //Log error
 
