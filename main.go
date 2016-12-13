@@ -28,7 +28,7 @@ var (
 	wantedEvents      = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
 	boltDatabasePath  = "my.db"                   //default
 	tickerTime, errT  = time.ParseDuration("60s") //Default
-	eventsAmount      = kingpin.Flag("event-amount", "Events amount").Int()
+	eventsBatch       = kingpin.Flag("event-amount", "Events amount").Int()
 )
 
 var (
@@ -41,10 +41,6 @@ func main() {
 
 	fmt.Println("this is the sumo endpoint")
 	fmt.Println(sumoEndpoint)
-
-	//Creating queue
-	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue, *eventsAmount)
 
 	fmt.Printf("Starting firehose-to-sumo %s \n", version)
 
@@ -67,6 +63,10 @@ func main() {
 	} else {
 		cachingClient = caching.NewCachingEmpty()
 	}
+
+	//Creating queue
+	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue, *eventsBatch)
 
 	//Creating Events
 	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, *queue)
