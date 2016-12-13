@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
-	//"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
 )
 
 type SumoLogicAppender struct {
@@ -46,6 +45,7 @@ func (s *SumoLogicAppender) Connect() bool {
 
 func (s *SumoLogicAppender) AppendLogs() {
 	// the appender calls for the next message in the queue and parse it to a string
+	fmt.Println("i'm in appendLogs")
 	event := s.nozzleQueue.Pop().GetNodeEvent()
 	/*
 		if event == nil {
@@ -60,7 +60,7 @@ func (s *SumoLogicAppender) AppendLogs() {
 		return
 	}
 
-	Message := time.Unix(int64(event.Fields["timestamp"].(int64)), 0).String() + "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
+	Message := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
 	fmt.Println(Message)
 	s.SendToSumo(Message)
 }
