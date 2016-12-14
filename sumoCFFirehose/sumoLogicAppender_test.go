@@ -48,7 +48,10 @@ func testAppenderStringBuilder(t *testing.T) {
 	queue.Push(&node2)
 	queue.Push(&node3)
 
-	finalString := StringBuilder(queue)
+	finalString := ""
+	for queue.GetCount() > 0 {
+		finalString = finalString + StringBuilder(queue.Pop())
+	}
 	assert.Equal(t, finalString, "2016-12-12 16:02:41.828366387 -0300 CLST"+"\t"+"OUT"+"\t"+"index [01]"+"\n"+
 		"2016-12-12 16:02:42.844737993 -0300 CLST"+"\t"+"OUT"+"\t"+"index [02]"+"\n"+
 		"2016-12-12 16:02:43.862436654 -0300 CLST"+"\t"+"OUT"+"\t"+"index [03]"+"\n", "")

@@ -45,29 +45,28 @@ func (s *SumoLogicAppender) Connect() bool {
 	return success
 }
 
-func StringBuilder(queue eventQueue.Queue) string {
+func StringBuilder(node *eventQueue.Node) string {
 	buf := new(bytes.Buffer)
-	for queue.GetCount() > 0 { //Pop eventsBatch from queue
-		event := queue.Pop().GetNodeEvent()
-		if event.Fields["message_type"] == nil {
-			return ""
-		}
-		if event.Fields["message_type"] == "" {
-			return ""
-		}
-		message := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
-		buf.WriteString(message)
+	if node.Event.Fields["message_type"] == nil {
+		return ""
 	}
+	if node.Event.Fields["message_type"] == "" {
+		return ""
+	}
+	message := time.Unix(0, node.Event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + node.Event.Fields["message_type"].(string) + "\t" + node.Event.Msg + "\n"
+	buf.WriteString(message)
 
 	return buf.String()
 }
 
-func (s *SumoLogicAppender) AppendLogs(queue eventQueue.Queue) {
+func (s *SumoLogicAppender) AppendLogs() {
 	// the appender calls for the next message in the queue and parse it to a string
-	if queue.GetCount() > s.eventsBatchSize { //whent the batch limit is met, call stringBuilder
-		logMessage := StringBuilder(queue)
-		s.SendToSumo(logMessage)
+	logMessage := ""
+	if s.nozzleQueue.GetCount() > s.eventsBatchSize { //when the batch limit is met, call stringBuilder
+		logMessage = logMessage + StringBuilder(s.nozzleQueue.Pop())
+
 	}
+	s.SendToSumo(logMessage)
 
 }
 

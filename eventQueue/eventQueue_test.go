@@ -8,7 +8,7 @@ import (
 )
 
 func TestQueueFIFO(t *testing.T) {
-
+	assert := assert.New(t)
 	node1 := Node{
 		Event: Event{
 			Fields: map[string]interface{}{
@@ -45,7 +45,7 @@ func TestQueueFIFO(t *testing.T) {
 	queue.Push(&node2)
 	queue.Push(&node3)
 
-	assert.Equal(t, queue.Pop().Event.Msg, "index [01]", "")
-	assert.Equal(t, queue.Pop().Event.Msg, "index [02]", "")
-	assert.Equal(t, queue.Pop().Event.Msg, "index [03]", "")
+	assert.Equal(queue.Pop().Event.Msg, "index [01]", "")
+	assert.Equal(queue.Pop().Event.Msg, "index [02]", "")
+	assert.Equal(queue.Pop().Event.Msg, "index [03]", "")
 }
