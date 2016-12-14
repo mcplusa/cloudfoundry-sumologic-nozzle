@@ -28,7 +28,7 @@ var (
 	wantedEvents      = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
 	boltDatabasePath  = "my.db"                   //default
 	tickerTime, errT  = time.ParseDuration("60s") //Default
-	eventsBatchSize   = kingpin.Flag("event-amount", "Events amount").Int()
+	eventsBatchSize   = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").Int()
 )
 
 var (
