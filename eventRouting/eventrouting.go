@@ -148,7 +148,6 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 
 			//Push the event to the queue
 			e.queue.Push(eventQueue.NewNode(*event))
-			//e.sLAppender.AppendLogs(*event)
 		}
 	}()
 }

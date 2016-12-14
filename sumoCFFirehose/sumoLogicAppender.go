@@ -52,13 +52,18 @@ func (s *SumoLogicAppender) Connect() bool {
 func (s *SumoLogicAppender) Start() {
 	timer := time.NewTimer(60 * time.Second)
 	fmt.Println("Starting Appender Worker")
+
 	s.logStringToSend = ""
 	for {
+		fmt.Println("nozzle queue")
+		fmt.Println(s.nozzleQueue.GetCount())
 		time.Sleep(300 * time.Millisecond)
-		if s.nozzleQueue.GetCount() > 0 {
+		if s.nozzleQueue.GetCount() != 0 {
+			fmt.Println("i'm on the if")
 			s.AppendLogs()
 		}
-		if s.eventsBatchSize >= s.logEventsInCurrentBuffer {
+		fmt.Println("passed first if")
+		if s.logEventsInCurrentBuffer >= s.eventsBatchSize {
 			s.SendToSumo(s.logStringToSend)
 			s.logEventsInCurrentBuffer = 0 // reset counter
 			s.logStringToSend = ""         //reset String
@@ -67,6 +72,8 @@ func (s *SumoLogicAppender) Start() {
 			s.logEventsInCurrentBuffer = 0 // reset counter
 			s.logStringToSend = ""         //reset String
 		}
+		fmt.Println("passed second if")
+		fmt.Println("end of bucle")
 
 	}
 }

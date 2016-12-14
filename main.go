@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"runtime"
+
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
@@ -38,9 +40,7 @@ var (
 func main() {
 	kingpin.Version(version)
 	kingpin.Parse()
-
-	fmt.Println("this is the sumo endpoint")
-	fmt.Println(sumoEndpoint)
+	runtime.GOMAXPROCS(2)
 
 	fmt.Printf("Starting firehose-to-sumo %s \n", version)
 
@@ -100,6 +100,8 @@ func main() {
 		fmt.Printf("Connected to Server! Connecting to Firehose... \n")
 
 		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
+
+		//go firehoseClient.Start()
 		err = firehoseClient.Start()
 		if err != nil {
 			fmt.Printf("Failed connecting to Firehose...Please check settings and try again! \n") //Log error
@@ -110,6 +112,7 @@ func main() {
 
 	} else {
 		fmt.Printf("Failed connecting to the Fluentd Server...Please check settings and try again! \n") //Log error
+
 	}
 
 	defer cachingClient.Close()
