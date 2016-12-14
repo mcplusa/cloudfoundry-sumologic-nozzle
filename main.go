@@ -67,6 +67,7 @@ func main() {
 	//Creating queue
 	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
 	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue, *eventsBatchSize)
+	go loggingClientSumo.Start() //multi
 
 	//Creating Events
 	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, *queue)

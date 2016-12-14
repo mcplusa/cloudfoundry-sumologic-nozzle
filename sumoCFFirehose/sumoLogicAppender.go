@@ -45,6 +45,10 @@ func (s *SumoLogicAppender) Connect() bool {
 	return success
 }
 
+func (s *SumoLogicAppender) Start() {
+	s.AppendLogs()
+}
+
 func StringBuilder(node *eventQueue.Node) string {
 	buf := new(bytes.Buffer)
 	if node.Event.Fields["message_type"] == nil {
@@ -61,12 +65,18 @@ func StringBuilder(node *eventQueue.Node) string {
 
 func (s *SumoLogicAppender) AppendLogs() {
 	// the appender calls for the next message in the queue and parse it to a string
+	//timer := time.NewTimer(60 * time.Second)
 	logMessage := ""
-	if s.nozzleQueue.GetCount() > s.eventsBatchSize { //when the batch limit is met, call stringBuilder
+	stringBuilderCalls := 0
+	for s.nozzleQueue.GetCount() > s.eventsBatchSize { //when the batch limit is met, call stringBuilder
 		logMessage = logMessage + StringBuilder(s.nozzleQueue.Pop())
-
+		stringBuilderCalls++
+		if s.eventsBatchSize == stringBuilderCalls {
+			s.SendToSumo(logMessage)
+			stringBuilderCalls = 0
+			logMessage = ""
+		}
 	}
-	s.SendToSumo(logMessage)
 
 }
 
