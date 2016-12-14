@@ -15,14 +15,16 @@ type SumoLogicAppender struct {
 	connectionTimeout int //10000
 	httpClient        http.Client
 	nozzleQueue       eventQueue.Queue
+	eventsBatchSize   int
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue, eventsBatchSize int) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:               urlValue,
 		connectionTimeout: connectionTimeoutValue,
 		httpClient:        http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
 		nozzleQueue:       nozzleQueue,
+		eventsBatchSize:   eventsBatchSize,
 	}
 }
 
@@ -43,26 +45,29 @@ func (s *SumoLogicAppender) Connect() bool {
 	return success
 }
 
+func StringBuilder(node *eventQueue.Node) string {
+	buf := new(bytes.Buffer)
+	if node.Event.Fields["message_type"] == nil {
+		return ""
+	}
+	if node.Event.Fields["message_type"] == "" {
+		return ""
+	}
+	message := time.Unix(0, node.Event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + node.Event.Fields["message_type"].(string) + "\t" + node.Event.Msg + "\n"
+	buf.WriteString(message)
+
+	return buf.String()
+}
+
 func (s *SumoLogicAppender) AppendLogs() {
 	// the appender calls for the next message in the queue and parse it to a string
-	fmt.Println("i'm in appendLogs")
-	event := s.nozzleQueue.Pop().GetNodeEvent()
-	/*
-		if event == nil {
-			return
-		}*/
+	logMessage := ""
+	if s.nozzleQueue.GetCount() > s.eventsBatchSize { //when the batch limit is met, call stringBuilder
+		logMessage = logMessage + StringBuilder(s.nozzleQueue.Pop())
 
-	if event.Fields["message_type"] == nil {
-		return
 	}
+	s.SendToSumo(logMessage)
 
-	if event.Fields["message_type"] == "" {
-		return
-	}
-
-	Message := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
-	fmt.Println(Message)
-	s.SendToSumo(Message)
 }
 
 func (s *SumoLogicAppender) SendToSumo(log string) {

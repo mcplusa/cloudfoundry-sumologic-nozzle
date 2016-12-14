@@ -6,12 +6,12 @@ import (
 
 //Node to put in queue
 type Node struct {
-	event Event
+	Event Event
 }
 
 // Queue is a basic FIFO queue based on a circular list that resizes as needed.
 type Queue struct {
-	nodes []*Node
+	Nodes []*Node
 	head  int
 	tail  int
 	count int
@@ -19,18 +19,18 @@ type Queue struct {
 
 func NewNode(event Event) *Node {
 	return &Node{
-		event: event,
+		Event: event,
 	}
 }
 
 func NewQueue(n []*Node) *Queue {
 	return &Queue{
-		nodes: n,
+		Nodes: n,
 	}
 }
 
 func (q *Queue) GetNode() []*Node {
-	return q.nodes
+	return q.Nodes
 }
 
 func (n *Queue) GetCount() int {
@@ -38,21 +38,21 @@ func (n *Queue) GetCount() int {
 }
 
 func (n *Node) GetNodeEvent() Event {
-	return n.event
+	return n.Event
 }
 
 // Push adds a node to the queue.
 func (q *Queue) Push(n *Node) {
 	if q.head == q.tail && q.count > 0 {
-		nodes := make([]*Node, len(q.nodes)*2)
-		copy(nodes, q.nodes[q.head:])
-		copy(nodes[len(q.nodes)-q.head:], q.nodes[:q.head])
+		nodes := make([]*Node, len(q.Nodes)*2)
+		copy(nodes, q.Nodes[q.head:])
+		copy(nodes[len(q.Nodes)-q.head:], q.Nodes[:q.head])
 		q.head = 0
-		q.tail = len(q.nodes)
-		q.nodes = nodes
+		q.tail = len(q.Nodes)
+		q.Nodes = nodes
 	}
-	q.nodes[q.tail] = n
-	q.tail = (q.tail + 1) % len(q.nodes)
+	q.Nodes[q.tail] = n
+	q.tail = (q.tail + 1) % len(q.Nodes)
 	q.count++
 }
 
@@ -61,8 +61,8 @@ func (q *Queue) Pop() *Node {
 	if q.count == 0 {
 		return nil
 	}
-	node := q.nodes[q.head]
-	q.head = (q.head + 1) % len(q.nodes)
+	node := q.Nodes[q.head]
+	q.head = (q.head + 1) % len(q.Nodes)
 	q.count--
 	return node
 }
