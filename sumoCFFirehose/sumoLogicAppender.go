@@ -15,16 +15,16 @@ type SumoLogicAppender struct {
 	connectionTimeout int //10000
 	httpClient        http.Client
 	nozzleQueue       eventQueue.Queue
-	eventsBatch       int
+	eventsBatchSize   int
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue, eventsBatch int) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue, eventsBatchSize int) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:               urlValue,
 		connectionTimeout: connectionTimeoutValue,
 		httpClient:        http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
 		nozzleQueue:       nozzleQueue,
-		eventsBatch:       eventsBatch,
+		eventsBatchSize:   eventsBatchSize,
 	}
 }
 
@@ -64,7 +64,7 @@ func StringBuilder(queue eventQueue.Queue) string {
 
 func (s *SumoLogicAppender) AppendLogs(queue eventQueue.Queue) {
 	// the appender calls for the next message in the queue and parse it to a string
-	if queue.GetCount() == s.eventsBatch { //whent the batch limit is met, call stringBuilder
+	if queue.GetCount() > s.eventsBatchSize { //whent the batch limit is met, call stringBuilder
 		logMessage := StringBuilder(queue)
 		s.SendToSumo(logMessage)
 	}

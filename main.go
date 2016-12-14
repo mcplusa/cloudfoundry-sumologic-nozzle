@@ -28,7 +28,7 @@ var (
 	wantedEvents      = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
 	boltDatabasePath  = "my.db"                   //default
 	tickerTime, errT  = time.ParseDuration("60s") //Default
-	eventsBatch       = kingpin.Flag("event-amount", "Events amount").Int()
+	eventsBatchSize   = kingpin.Flag("event-amount", "Events amount").Int()
 )
 
 var (
@@ -66,7 +66,7 @@ func main() {
 
 	//Creating queue
 	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue, *eventsBatch)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue, *eventsBatchSize)
 
 	//Creating Events
 	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, *queue)
