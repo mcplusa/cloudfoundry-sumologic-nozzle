@@ -14,13 +14,13 @@ type SumoLogicAppender struct {
 	url                      string
 	connectionTimeout        int //10000
 	httpClient               http.Client
-	nozzleQueue              eventQueue.Queue
+	nozzleQueue              *eventQueue.Queue
 	eventsBatchSize          int
 	logEventsInCurrentBuffer int
 	logStringToSend          string
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue, eventsBatchSize int) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:                      urlValue,
 		connectionTimeout:        connectionTimeoutValue,
@@ -50,30 +50,29 @@ func (s *SumoLogicAppender) Connect() bool {
 }
 
 func (s *SumoLogicAppender) Start() {
-	timer := time.NewTimer(60 * time.Second)
+	timer := time.Now()
 	fmt.Println("Starting Appender Worker")
-
 	s.logStringToSend = ""
 	for {
-		fmt.Println("nozzle queue")
-		fmt.Println(s.nozzleQueue.GetCount())
 		time.Sleep(300 * time.Millisecond)
 		if s.nozzleQueue.GetCount() != 0 {
-			fmt.Println("i'm on the if")
 			s.AppendLogs()
+			fmt.Println(s.logStringToSend)
 		}
-		fmt.Println("passed first if")
 		if s.logEventsInCurrentBuffer >= s.eventsBatchSize {
+			fmt.Println("Buffer full")
+			fmt.Println(s.logStringToSend)
 			s.SendToSumo(s.logStringToSend)
 			s.logEventsInCurrentBuffer = 0 // reset counter
 			s.logStringToSend = ""         //reset String
-		} else if (<-timer.C).Second() == 0 {
+		} else if time.Since(timer).Seconds() >= 10 {
+			fmt.Println("timer finished, sending logs...")
+			fmt.Println(s.logStringToSend)
 			s.SendToSumo(s.logStringToSend)
 			s.logEventsInCurrentBuffer = 0 // reset counter
 			s.logStringToSend = ""         //reset String
+			timer = time.Now()             //reset timer
 		}
-		fmt.Println("passed second if")
-		fmt.Println("end of bucle")
 
 	}
 }
@@ -97,7 +96,6 @@ func (s *SumoLogicAppender) AppendLogs() {
 	//timer := time.NewTimer(60 * time.Second)
 	s.logStringToSend = s.logStringToSend + StringBuilder(s.nozzleQueue.Pop())
 	s.logEventsInCurrentBuffer++
-
 }
 
 func (s *SumoLogicAppender) SendToSumo(log string) {

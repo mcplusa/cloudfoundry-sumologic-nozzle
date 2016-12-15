@@ -40,7 +40,7 @@ var (
 func main() {
 	kingpin.Version(version)
 	kingpin.Parse()
-	runtime.GOMAXPROCS(2)
+	runtime.GOMAXPROCS(1)
 
 	fmt.Printf("Starting firehose-to-sumo %s \n", version)
 
@@ -66,11 +66,11 @@ func main() {
 
 	//Creating queue
 	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, *queue, *eventsBatchSize)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, &queue, *eventsBatchSize)
 	go loggingClientSumo.Start() //multi
 
 	//Creating Events
-	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, *queue)
+	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, &queue)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		log.Fatal("Error setting up event routing: ", err)
@@ -100,20 +100,11 @@ func main() {
 		fmt.Printf("Connected to Server! Connecting to Firehose... \n")
 
 		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
+		go firehoseClient.Start()
 
-		//go firehoseClient.Start()
-		err = firehoseClient.Start()
-		if err != nil {
-			fmt.Printf("Failed connecting to Firehose...Please check settings and try again! \n") //Log error
-
-		} else {
-			fmt.Printf("Firehose Subscription Succesfull! Routing events... \n")
-		}
-
-	} else {
-		fmt.Printf("Failed connecting to the Fluentd Server...Please check settings and try again! \n") //Log error
-
+		defer firehoseClient.Start()
 	}
 
 	defer cachingClient.Close()
+
 }
