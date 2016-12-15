@@ -1,8 +1,6 @@
 package eventQueue
 
-import (
-	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
-)
+import . "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
 
 //Node to put in queue
 type Node struct {
@@ -23,8 +21,8 @@ func NewNode(event Event) *Node {
 	}
 }
 
-func NewQueue(n []*Node) *Queue {
-	return &Queue{
+func NewQueue(n []*Node) Queue {
+	return Queue{
 		Nodes: n,
 	}
 }

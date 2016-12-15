@@ -3,9 +3,10 @@ package sumoCFFirehose
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
-	"github.com/stretchr/testify/assert"
 )
 
 func testAppenderStringBuilder(t *testing.T) {
@@ -55,5 +56,4 @@ func testAppenderStringBuilder(t *testing.T) {
 	assert.Equal(t, finalString, "2016-12-12 16:02:41.828366387 -0300 CLST"+"\t"+"OUT"+"\t"+"index [01]"+"\n"+
 		"2016-12-12 16:02:42.844737993 -0300 CLST"+"\t"+"OUT"+"\t"+"index [02]"+"\n"+
 		"2016-12-12 16:02:43.862436654 -0300 CLST"+"\t"+"OUT"+"\t"+"index [03]"+"\n", "")
-
 }

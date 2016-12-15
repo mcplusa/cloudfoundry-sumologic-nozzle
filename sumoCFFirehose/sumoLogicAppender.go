@@ -3,7 +3,6 @@ package sumoCFFirehose
 import (
 	"bytes"
 	"fmt"
-	"net"
 	"net/http"
 	"time"
 
@@ -11,38 +10,47 @@ import (
 )
 
 type SumoLogicAppender struct {
-	url               string
-	connectionTimeout int //10000
-	httpClient        http.Client
-	nozzleQueue       eventQueue.Queue
-	eventsBatchSize   int
+	url                      string
+	connectionTimeout        int //10000
+	httpClient               http.Client
+	nozzleQueue              *eventQueue.Queue
+	eventsBatchSize          int
+	logEventsInCurrentBuffer int
+	logStringToSend          *bytes.Buffer
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue eventQueue.Queue, eventsBatchSize int) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int) *SumoLogicAppender {
 	return &SumoLogicAppender{
-		url:               urlValue,
-		connectionTimeout: connectionTimeoutValue,
-		httpClient:        http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
-		nozzleQueue:       nozzleQueue,
-		eventsBatchSize:   eventsBatchSize,
+		url:                      urlValue,
+		connectionTimeout:        connectionTimeoutValue,
+		httpClient:               http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
+		nozzleQueue:              nozzleQueue,
+		eventsBatchSize:          eventsBatchSize,
+		logEventsInCurrentBuffer: 0,
+		logStringToSend:          bytes.NewBufferString(""),
 	}
 }
 
-func (s *SumoLogicAppender) Connect() bool {
-	success := false
-	if s.url != "" {
-		conn, err := net.Dial("tcp", s.url)
-		if err != nil {
-			fmt.Printf(fmt.Sprintf("Unable to connect to sumo server [%s]!\n", s.url), err.Error())
-		} else {
-
-			fmt.Printf(fmt.Sprintf("Connected to [%s]!\n", s.url), false)
-			success = true
-			defer conn.Close()
+func (s *SumoLogicAppender) Start() {
+	timer := time.Now()
+	fmt.Println("Starting Appender Worker")
+	for {
+		time.Sleep(300 * time.Millisecond)
+		if s.nozzleQueue.GetCount() != 0 { //if queue is not empty, AppendLogs
+			s.AppendLogs()
 		}
-	}
+		if s.logEventsInCurrentBuffer >= s.eventsBatchSize { //if buffer is full, send logs to sumo
+			fmt.Println("Buffer full, sending logs to sumo...")
 
-	return success
+			s.SendToSumo(s.logStringToSend)
+
+		} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
+			fmt.Println("timer finished, sending logs...")
+			s.SendToSumo(s.logStringToSend)
+			timer = time.Now() //reset timer
+		}
+
+	}
 }
 
 func StringBuilder(node *eventQueue.Node) string {
@@ -61,17 +69,14 @@ func StringBuilder(node *eventQueue.Node) string {
 
 func (s *SumoLogicAppender) AppendLogs() {
 	// the appender calls for the next message in the queue and parse it to a string
-	logMessage := ""
-	if s.nozzleQueue.GetCount() > s.eventsBatchSize { //when the batch limit is met, call stringBuilder
-		logMessage = logMessage + StringBuilder(s.nozzleQueue.Pop())
-
-	}
-	s.SendToSumo(logMessage)
-
+	//timer := time.NewTimer(60 * time.Second)
+	s.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop())))
+	s.logEventsInCurrentBuffer++
 }
 
-func (s *SumoLogicAppender) SendToSumo(log string) {
-	request, err := http.NewRequest("POST", s.url, bytes.NewBufferString(log))
+func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
+	fmt.Println(log)
+	request, err := http.NewRequest("POST", s.url, log)
 	if err != nil {
 		fmt.Printf("http.NewRequest() error: %v\n", err)
 		return
@@ -86,6 +91,8 @@ func (s *SumoLogicAppender) SendToSumo(log string) {
 	} else {
 		fmt.Println("Do(Request) successful")
 	}
+	s.logEventsInCurrentBuffer = 0                // reset counter
+	s.logStringToSend = bytes.NewBufferString("") //reset String
 	defer response.Body.Close()
 
 }

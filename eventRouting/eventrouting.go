@@ -21,10 +21,10 @@ type EventRouting struct {
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
 	sLAppender          sumoCFFirehose.SumoLogicAppender //**
-	queue               eventQueue.Queue
+	queue               *eventQueue.Queue
 }
 
-func NewEventRouting(caching caching.Caching, sLAppender sumoCFFirehose.SumoLogicAppender, queue eventQueue.Queue) *EventRouting {
+func NewEventRouting(caching caching.Caching, sLAppender sumoCFFirehose.SumoLogicAppender, queue *eventQueue.Queue) *EventRouting {
 	return &EventRouting{
 		CachingClient:       caching,
 		selectedEvents:      make(map[string]bool),
@@ -148,7 +148,6 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 
 			//Push the event to the queue
 			e.queue.Push(eventQueue.NewNode(*event))
-			//e.sLAppender.AppendLogs(*event)
 		}
 	}()
 }
