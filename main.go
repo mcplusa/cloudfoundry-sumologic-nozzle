@@ -47,6 +47,12 @@ func main() {
 
 	runtime.GOMAXPROCS(1)
 
+	logging.Info.Println("Configurations set:")
+	logging.Info.Println("Api Endpoint: " + apiEndpoint)
+	logging.Info.Println("Sumo Endpoint: " + *sumoEndpoint)
+	logging.Info.Println("User: " + user)
+	logging.Info.Printf("Events Batch Size: [%d]\n", eventsBatchSize)
+
 	logging.Info.Println("Starting firehose-to-sumo " + version)
 
 	c := cfclient.Config{
@@ -69,12 +75,12 @@ func main() {
 		cachingClient = caching.NewCachingEmpty()
 	}
 
-	//Creating queue
+	logging.Info.Println("Creating queue")
 	queue := eventQueue.NewQueue(make([]*events.Event, 100))
 	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, &queue, *eventsBatchSize)
 	go loggingClientSumo.Start() //multi
 
-	//Creating Events
+	logging.Info.Println("Creating Events")
 	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, &queue)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {

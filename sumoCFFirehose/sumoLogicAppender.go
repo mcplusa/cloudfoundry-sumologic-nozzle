@@ -41,11 +41,11 @@ func (s *SumoLogicAppender) Start() {
 			s.AppendLogs()
 		}
 		if s.logEventsInCurrentBuffer >= s.eventsBatchSize { //if buffer is full, send logs to sumo
-			logging.Info.Println("Buffer full")
+			logging.Trace.Println("Batch Size complete")
 			s.SendToSumo(s.logStringToSend)
 
 		} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
-			logging.Info.Println("timer finished")
+			logging.Trace.Println("Sending current batch of logs after timer exceeded limit")
 			s.SendToSumo(s.logStringToSend)
 			timer = time.Now() //reset timer
 		}
@@ -75,7 +75,7 @@ func (s *SumoLogicAppender) AppendLogs() {
 }
 
 func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
-	logging.Info.Println("Sending logs to Sumologic...")
+	logging.Trace.Println("Sending logs to Sumologic...")
 	request, err := http.NewRequest("POST", s.url, log)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
@@ -89,7 +89,7 @@ func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
 		logging.Error.Printf("http.Do() error: %v\n", err)
 		return
 	} else {
-		logging.Info.Println("Do(Request) successful")
+		logging.Trace.Println("Do(Request) successful")
 	}
 	s.logEventsInCurrentBuffer = 0                // reset counter
 	s.logStringToSend = bytes.NewBufferString("") //reset String

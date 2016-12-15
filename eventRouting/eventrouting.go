@@ -10,7 +10,6 @@ import (
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	fevents "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
 	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -77,10 +76,8 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
 			//Push the event to the queue
-			logging.Info.Println("pushing event to queue")
 			e.queue.Push(event)
 			e.selectedEventsCount[eventType.String()]++
-
 		}
 		e.mutex.Unlock()
 	}
