@@ -10,44 +10,39 @@ import (
 )
 
 func testAppenderStringBuilder(t *testing.T) {
+	event1 := Event{
+		Fields: map[string]interface{}{
+			"timestamp":    "1481569361828366387",
+			"message_type": "OUT",
+			"cf_app_id":    "011",
+		},
+		Msg: "index [01]",
+	}
 
-	node1 := Node{
-		Event: Event{
-			Fields: map[string]interface{}{
-				"timestamp":    "1481569361828366387",
-				"message_type": "OUT",
-				"cf_app_id":    "011",
-			},
-			Msg: "index [01]",
+	event2 := Event{
+		Fields: map[string]interface{}{
+			"timestamp":    "1481569362844737993",
+			"message_type": "OUT",
+			"cf_app_id":    "022",
 		},
+		Msg: "index [02]",
 	}
-	node2 := Node{
-		Event: Event{
-			Fields: map[string]interface{}{
-				"timestamp":    "1481569362844737993",
-				"message_type": "OUT",
-				"cf_app_id":    "022",
-			},
-			Msg: "index [02]",
+
+	event3 := Event{
+		Fields: map[string]interface{}{
+			"timestamp":    "1481569363862436654",
+			"message_type": "OUT",
+			"cf_app_id":    "033",
 		},
-	}
-	node3 := Node{
-		Event: Event{
-			Fields: map[string]interface{}{
-				"timestamp":    "1481569363862436654",
-				"message_type": "OUT",
-				"cf_app_id":    "033",
-			},
-			Msg: "index [03]",
-		},
+		Msg: "index [03]",
 	}
 
 	queue := Queue{
-		Nodes: make([]*Node, 3),
+		Events: make([]*Event, 3),
 	}
-	queue.Push(&node1)
-	queue.Push(&node2)
-	queue.Push(&node3)
+	queue.Push(&event1)
+	queue.Push(&event2)
+	queue.Push(&event3)
 
 	finalString := ""
 	for queue.GetCount() > 0 {

@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"io/ioutil"
 	"os"
-	"time"
-
 	"runtime"
+	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/firehoseclient"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -38,11 +39,15 @@ var (
 )
 
 func main() {
+	//logging init
+	logging.Init(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
+
 	kingpin.Version(version)
 	kingpin.Parse()
+
 	runtime.GOMAXPROCS(1)
 
-	fmt.Printf("Starting firehose-to-sumo %s \n", version)
+	logging.Info.Println("Starting firehose-to-sumo " + version)
 
 	c := cfclient.Config{
 		ApiAddress:        apiEndpoint,
@@ -65,7 +70,7 @@ func main() {
 	}
 
 	//Creating queue
-	queue := eventQueue.NewQueue(make([]*eventQueue.Node, 100))
+	queue := eventQueue.NewQueue(make([]*events.Event, 100))
 	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, &queue, *eventsBatchSize)
 	go loggingClientSumo.Start() //multi
 
@@ -73,7 +78,7 @@ func main() {
 	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, &queue)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {
-		log.Fatal("Error setting up event routing: ", err)
+		logging.Error.Fatal("Error setting up event routing: ", err)
 		os.Exit(1)
 
 	}
@@ -81,9 +86,9 @@ func main() {
 	// Parse extra fields from cmd call
 	cachingClient.CreateBucket()
 	//Let's Update the database the first time
-	fmt.Printf("Start filling app/space/org cache.\n")
+	logging.Info.Printf("Start filling app/space/org cache.\n")
 	apps := cachingClient.GetAllApp()
-	fmt.Printf("Done filling cache! Found [%d] Apps \n", len(apps))
+	logging.Info.Printf("Done filling cache! Found [%d] Apps \n", len(apps))
 
 	//Let's start the goRoutine
 	cachingClient.PerformPoollingCaching(tickerTime)
@@ -95,15 +100,12 @@ func main() {
 		FirehoseSubscriptionID: *subscriptionId,
 	}
 
-	if /*loggingClientSumo.Connect() ||*/ debug {
+	logging.Info.Printf("Connecting to Firehose... \n")
 
-		fmt.Printf("Connected to Server! Connecting to Firehose... \n")
+	firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
+	go firehoseClient.Start()
 
-		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
-		go firehoseClient.Start()
-
-		defer firehoseClient.Start()
-	}
+	defer firehoseClient.Start()
 
 	defer cachingClient.Close()
 

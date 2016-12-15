@@ -9,43 +9,39 @@ import (
 
 func TestQueueFIFO(t *testing.T) {
 	assert := assert.New(t)
-	node1 := Node{
-		Event: Event{
-			Fields: map[string]interface{}{
-				"message_type": "OUT",
-				"cf_app_id":    "011",
-			},
-			Msg: "index [01]",
+	event1 := Event{
+		Fields: map[string]interface{}{
+			"message_type": "OUT",
+			"cf_app_id":    "011",
 		},
+		Msg: "index [01]",
 	}
-	node2 := Node{
-		Event: Event{
-			Fields: map[string]interface{}{
-				"message_type": "OUT",
-				"cf_app_id":    "022",
-			},
-			Msg: "index [02]",
+
+	event2 := Event{
+		Fields: map[string]interface{}{
+			"message_type": "OUT",
+			"cf_app_id":    "022",
 		},
+		Msg: "index [02]",
 	}
-	node3 := Node{
-		Event: Event{
-			Fields: map[string]interface{}{
-				"message_type": "OUT",
-				"cf_app_id":    "033",
-			},
-			Msg: "index [03]",
+
+	event3 := Event{
+		Fields: map[string]interface{}{
+			"message_type": "OUT",
+			"cf_app_id":    "033",
 		},
+		Msg: "index [03]",
 	}
 
 	queue := Queue{
-		Nodes: make([]*Node, 3),
+		Events: make([]*Event, 3),
 	}
 
-	queue.Push(&node1)
-	queue.Push(&node2)
-	queue.Push(&node3)
+	queue.Push(&event1)
+	queue.Push(&event2)
+	queue.Push(&event3)
 
-	assert.Equal(queue.Pop().Event.Msg, "index [01]", "")
-	assert.Equal(queue.Pop().Event.Msg, "index [02]", "")
-	assert.Equal(queue.Pop().Event.Msg, "index [03]", "")
+	assert.Equal(queue.Pop().Msg, "index [01]", "")
+	assert.Equal(queue.Pop().Msg, "index [02]", "")
+	assert.Equal(queue.Pop().Msg, "index [03]", "")
 }
