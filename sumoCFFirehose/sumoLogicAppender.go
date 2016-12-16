@@ -37,19 +37,21 @@ func (s *SumoLogicAppender) Start() {
 	logging.Info.Println("Starting Appender Worker")
 	for {
 		time.Sleep(300 * time.Millisecond)
-		if s.nozzleQueue.GetCount() != 0 { //if queue is not empty, AppendLogs
-			s.AppendLogs()
+		// while queue is not empty && s.eventsBatchSize not completed, queue.POP (appendLogs)
+		for s.nozzleQueue.GetCount() != 0 && s.logEventsInCurrentBuffer <= s.eventsBatchSize {
+			s.AppendLogs()                                       //this method POP an event from queue
+			timer = time.Now()                                   //reset timer
+			if s.logEventsInCurrentBuffer == s.eventsBatchSize { //if buffer is full, send logs to sumo
+				logging.Trace.Println("Batch Size complete")
+				s.SendToSumo(s.logStringToSend)
+				break
+			} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
+				logging.Trace.Println("Sending current batch of logs after timer exceeded limit")
+				s.SendToSumo(s.logStringToSend)
+				timer = time.Now() //reset timer
+				break
+			}
 		}
-		if s.logEventsInCurrentBuffer >= s.eventsBatchSize { //if buffer is full, send logs to sumo
-			logging.Trace.Println("Batch Size complete")
-			s.SendToSumo(s.logStringToSend)
-
-		} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
-			logging.Trace.Println("Sending current batch of logs after timer exceeded limit")
-			s.SendToSumo(s.logStringToSend)
-			timer = time.Now() //reset timer
-		}
-
 	}
 }
 
@@ -69,7 +71,6 @@ func StringBuilder(event *events.Event) string {
 
 func (s *SumoLogicAppender) AppendLogs() {
 	// the appender calls for the next message in the queue and parse it to a string
-	//timer := time.NewTimer(60 * time.Second)
 	s.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop())))
 	s.logEventsInCurrentBuffer++
 }
