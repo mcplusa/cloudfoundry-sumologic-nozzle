@@ -43,15 +43,14 @@ func (s *SumoLogicAppender) Start() {
 			timer = time.Now()                                   //reset timer
 			if s.logEventsInCurrentBuffer == s.eventsBatchSize { //if buffer is full, send logs to sumo
 				logging.Trace.Println("Batch Size complete")
-				s.SendToSumo(s.logStringToSend)
 				break
 			} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
 				logging.Trace.Println("Sending current batch of logs after timer exceeded limit")
-				s.SendToSumo(s.logStringToSend)
-				timer = time.Now() //reset timer
 				break
 			}
 		}
+		s.SendToSumo(s.logStringToSend)
+		timer = time.Now() //reset timer
 	}
 }
 
