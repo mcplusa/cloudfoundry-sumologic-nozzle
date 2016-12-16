@@ -76,10 +76,8 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
 			//Push the event to the queue
-			fmt.Println("pushing event to queue")
-			e.queue.Push(eventQueue.NewNode(*event))
+			e.queue.Push(event)
 			e.selectedEventsCount[eventType.String()]++
-
 		}
 		e.mutex.Unlock()
 	}
@@ -147,7 +145,7 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 			count = lastCount
 
 			//Push the event to the queue
-			e.queue.Push(eventQueue.NewNode(*event))
+			e.queue.Push(event)
 		}
 	}()
 }

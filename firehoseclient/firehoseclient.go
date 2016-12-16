@@ -2,10 +2,10 @@ package firehoseclient
 
 import (
 	"crypto/tls"
-	"fmt"
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -43,11 +43,10 @@ func NewFirehoseNozzle(cfClient *cfclient.Client, eventRouting *eventRouting.Eve
 }
 
 func (f *FirehoseNozzle) Start() error {
-	fmt.Printf("Started the Nozzle... \n")
+	logging.Info.Printf("Started the Nozzle... \n")
 	f.consumeFirehose()
-	fmt.Printf("consume the firehose... \n")
+	logging.Info.Printf("consume the firehose... \n")
 	err := f.routeEvent()
-	fmt.Printf("route event... \n")
 	return err
 }
 

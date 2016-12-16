@@ -2,11 +2,12 @@ package sumoCFFirehose
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
 )
 
 type SumoLogicAppender struct {
@@ -33,19 +34,18 @@ func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQue
 
 func (s *SumoLogicAppender) Start() {
 	timer := time.Now()
-	fmt.Println("Starting Appender Worker")
+	logging.Info.Println("Starting Appender Worker")
 	for {
 		time.Sleep(300 * time.Millisecond)
 		if s.nozzleQueue.GetCount() != 0 { //if queue is not empty, AppendLogs
 			s.AppendLogs()
 		}
 		if s.logEventsInCurrentBuffer >= s.eventsBatchSize { //if buffer is full, send logs to sumo
-			fmt.Println("Buffer full, sending logs to sumo...")
-
+			logging.Trace.Println("Batch Size complete")
 			s.SendToSumo(s.logStringToSend)
 
 		} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
-			fmt.Println("timer finished, sending logs...")
+			logging.Trace.Println("Sending current batch of logs after timer exceeded limit")
 			s.SendToSumo(s.logStringToSend)
 			timer = time.Now() //reset timer
 		}
@@ -53,15 +53,15 @@ func (s *SumoLogicAppender) Start() {
 	}
 }
 
-func StringBuilder(node *eventQueue.Node) string {
+func StringBuilder(event *events.Event) string {
 	buf := new(bytes.Buffer)
-	if node.Event.Fields["message_type"] == nil {
+	if event.Fields["message_type"] == nil {
 		return ""
 	}
-	if node.Event.Fields["message_type"] == "" {
+	if event.Fields["message_type"] == "" {
 		return ""
 	}
-	message := time.Unix(0, node.Event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + node.Event.Fields["message_type"].(string) + "\t" + node.Event.Msg + "\n"
+	message := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String() + "\t" + event.Fields["message_type"].(string) + "\t" + event.Msg + "\n"
 	buf.WriteString(message)
 
 	return buf.String()
@@ -75,10 +75,10 @@ func (s *SumoLogicAppender) AppendLogs() {
 }
 
 func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
-	fmt.Println(log)
+	logging.Trace.Println("Sending logs to Sumologic...")
 	request, err := http.NewRequest("POST", s.url, log)
 	if err != nil {
-		fmt.Printf("http.NewRequest() error: %v\n", err)
+		logging.Error.Printf("http.NewRequest() error: %v\n", err)
 		return
 	}
 	//request.Header.Add("content-type", "application/json")
@@ -86,10 +86,10 @@ func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
 	response, err := s.httpClient.Do(request)
 
 	if err != nil {
-		fmt.Printf("http.Do() error: %v\n", err)
+		logging.Error.Printf("http.Do() error: %v\n", err)
 		return
 	} else {
-		fmt.Println("Do(Request) successful")
+		logging.Trace.Println("Do(Request) successful")
 	}
 	s.logEventsInCurrentBuffer = 0                // reset counter
 	s.logStringToSend = bytes.NewBufferString("") //reset String
