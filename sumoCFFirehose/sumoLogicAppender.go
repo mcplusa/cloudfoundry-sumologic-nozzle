@@ -18,9 +18,11 @@ type SumoLogicAppender struct {
 	eventsBatchSize          int
 	logEventsInCurrentBuffer int
 	logStringToSend          *bytes.Buffer
+	sumoPostMinimumDelay     time.Duration
+	timerPostMinimum         time.Time
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:                      urlValue,
 		connectionTimeout:        connectionTimeoutValue,
@@ -29,14 +31,16 @@ func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQue
 		eventsBatchSize:          eventsBatchSize,
 		logEventsInCurrentBuffer: 0,
 		logStringToSend:          bytes.NewBufferString(""),
+		sumoPostMinimumDelay:     sumoPostMinimumDelay,
 	}
 }
 
 func (s *SumoLogicAppender) Start() {
 	timer := time.Now()
+	s.timerPostMinimum = time.Now() //starting timer for sumo post minimum
 	logging.Info.Println("Starting Appender Worker")
 	for {
-		time.Sleep(300 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond) //delay
 		// while queue is not empty && s.eventsBatchSize not completed, queue.POP (appendLogs)
 		for s.nozzleQueue.GetCount() != 0 && s.logEventsInCurrentBuffer <= s.eventsBatchSize {
 			s.AppendLogs()                                       //this method POP an event from queue
@@ -75,24 +79,28 @@ func (s *SumoLogicAppender) AppendLogs() {
 }
 
 func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
-	logging.Trace.Println("Sending logs to Sumologic...")
-	request, err := http.NewRequest("POST", s.url, log)
-	if err != nil {
-		logging.Error.Printf("http.NewRequest() error: %v\n", err)
-		return
-	}
-	//request.Header.Add("content-type", "application/json")
-	//request.SetBasicAuth("admin", "admin")
-	response, err := s.httpClient.Do(request)
+	//wait period between posts to Sumo
+	if time.Since(s.timerPostMinimum) >= s.sumoPostMinimumDelay {
+		logging.Trace.Println("Sending logs to Sumologic...")
+		request, err := http.NewRequest("POST", s.url, log)
+		if err != nil {
+			logging.Error.Printf("http.NewRequest() error: %v\n", err)
+			return
+		}
+		//request.Header.Add("content-type", "application/json")
+		//request.SetBasicAuth("admin", "admin")
+		response, err := s.httpClient.Do(request)
 
-	if err != nil {
-		logging.Error.Printf("http.Do() error: %v\n", err)
-		return
-	} else {
-		logging.Trace.Println("Do(Request) successful")
+		if err != nil {
+			logging.Error.Printf("http.Do() error: %v\n", err)
+			return
+		} else {
+			logging.Trace.Println("Do(Request) successful")
+		}
+		s.logEventsInCurrentBuffer = 0                // reset counter
+		s.logStringToSend = bytes.NewBufferString("") //reset String
+		defer response.Body.Close()
+		s.timerPostMinimum = time.Now() //reset timer post minimum
 	}
-	s.logEventsInCurrentBuffer = 0                // reset counter
-	s.logStringToSend = bytes.NewBufferString("") //reset String
-	defer response.Body.Close()
 
 }
