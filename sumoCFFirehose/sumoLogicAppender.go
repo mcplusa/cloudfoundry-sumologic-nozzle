@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
+	"sync"
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
@@ -13,16 +14,14 @@ import (
 )
 
 type SumoLogicAppender struct {
-	url                      string
-	connectionTimeout        int //10000
-	httpClient               http.Client
-	nozzleQueue              *eventQueue.Queue
-	eventsBatchSize          int
-	logEventsInCurrentBuffer int
-	logStringToSend          *bytes.Buffer
-	sumoPostMinimumDelay     time.Duration
-	timerPostMinimum         time.Time
-	bufferToSend             SumoBuffer
+	url                  string
+	connectionTimeout    int //10000
+	httpClient           http.Client
+	nozzleQueue          *eventQueue.Queue
+	eventsBatchSize      int
+	sumoPostMinimumDelay time.Duration
+	timerPostMinimum     time.Time
+	bufferToSend         SumoBuffer
 }
 
 type SumoBuffer struct {
@@ -32,15 +31,13 @@ type SumoBuffer struct {
 
 func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration) *SumoLogicAppender {
 	return &SumoLogicAppender{
-		url:                      urlValue,
-		connectionTimeout:        connectionTimeoutValue,
-		httpClient:               http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
-		nozzleQueue:              nozzleQueue,
-		eventsBatchSize:          eventsBatchSize,
-		logEventsInCurrentBuffer: 0,
-		logStringToSend:          bytes.NewBufferString(""),
-		sumoPostMinimumDelay:     sumoPostMinimumDelay,
-		timerPostMinimum:         time.Now(),
+		url:                  urlValue,
+		connectionTimeout:    connectionTimeoutValue,
+		httpClient:           http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
+		nozzleQueue:          nozzleQueue,
+		eventsBatchSize:      eventsBatchSize,
+		sumoPostMinimumDelay: sumoPostMinimumDelay,
+		timerPostMinimum:     time.Now(),
 		bufferToSend: SumoBuffer{
 			logStringToSend:          bytes.NewBufferString(""),
 			logEventsInCurrentBuffer: 0,
@@ -51,41 +48,45 @@ func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQue
 func (s *SumoLogicAppender) Start() {
 	runtime.GOMAXPROCS(1)
 	timer := time.Now()
-	tempBuffer := &SumoBuffer{
+	Buffer := &SumoBuffer{
 		logStringToSend:          bytes.NewBufferString(""),
 		logEventsInCurrentBuffer: 0,
 	}
+	var mutex = &sync.Mutex{} //synchronize access to Buffer
 
 	logging.Info.Println("Starting Appender Worker")
 	for {
 		time.Sleep(300 * time.Millisecond) //delay
-		// while queue is not empty && s.eventsBatchSize not completed, queue.POP (appendLogs)
-		for s.nozzleQueue.GetCount() != 0 && s.bufferToSend.logEventsInCurrentBuffer < s.eventsBatchSize {
-			s.AppendLogs(&s.bufferToSend)                                                                                                //this method POP an event from queue to Buffer
-			timer = time.Now()                                                                                                           //reset timer
-			if s.bufferToSend.logEventsInCurrentBuffer == s.eventsBatchSize && tempBuffer.logEventsInCurrentBuffer < s.eventsBatchSize { //if buffer is full, send logs to sumo
-				logging.Info.Println("Batch Size complete, filling temp buffer")
-				s.AppendLogs(tempBuffer)
-				break
-			} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
-				logging.Info.Println("Sending current batch of logs after timer exceeded limit")
-				go s.SendToSumo(s.bufferToSend.logStringToSend)
-				break
-			}
-		}
-		//if batch size is met, send to sumo and reset temp buffer
-		if s.bufferToSend.logEventsInCurrentBuffer == s.eventsBatchSize {
-			go s.SendToSumo(s.bufferToSend.logStringToSend)
-			s.bufferToSend.logStringToSend = tempBuffer.logStringToSend
-			s.bufferToSend.logEventsInCurrentBuffer = tempBuffer.logEventsInCurrentBuffer
-			tempBuffer = &SumoBuffer{ //reset temp buffer
+
+		mutex.Lock()                                              //lock mutex to ensure exclusive access to buffer
+		if Buffer.logEventsInCurrentBuffer >= s.eventsBatchSize { //if buffer is full, create a new one
+			Buffer = &SumoBuffer{
 				logStringToSend:          bytes.NewBufferString(""),
 				logEventsInCurrentBuffer: 0,
 			}
 		}
-
+		mutex.Unlock()
+		// while queue is not empty && s.eventsBatchSize not completed, queue.POP (appendLogs)
+		for s.nozzleQueue.GetCount() != 0 && Buffer.logEventsInCurrentBuffer < s.eventsBatchSize {
+			mutex.Lock()         //lock mutex to ensure exclusive access to buffer
+			s.AppendLogs(Buffer) //this method POP an event from queue to Buffer
+			mutex.Unlock()
+			timer = time.Now()                                        //reset timer
+			if Buffer.logEventsInCurrentBuffer == s.eventsBatchSize { //if buffer is full, send logs to sumo
+				logging.Info.Println("Batch Size complete")
+				break
+			} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
+				logging.Info.Println("Sending current batch of logs after timer exceeded limit")
+				break
+			}
+		}
+		//if batch size is met, send to sumo and reset temp buffer
+		mutex.Lock()
+		s.SendToSumo(Buffer)
+		mutex.Unlock()
 		timer = time.Now() //reset timer
 	}
+
 }
 
 func StringBuilder(event *events.Event) string {
@@ -107,19 +108,18 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 	// then fills a buffer with the message
 	buffer.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop())))
 	buffer.logEventsInCurrentBuffer++
-	fmt.Println(s.bufferToSend.logEventsInCurrentBuffer)
 
 }
 
-func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
+func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
 	//wait period between posts to Sumo
-	fmt.Println(log.String())
-	fmt.Println(".............")
+	fmt.Println(buffer.logStringToSend.String())
+	fmt.Println("......................")
 	for time.Since(s.timerPostMinimum) < s.sumoPostMinimumDelay {
 		time.Sleep(30 * time.Millisecond) // wait to retry
 	}
 	logging.Trace.Println("Sending logs to Sumologic...")
-	request, err := http.NewRequest("POST", s.url, log)
+	request, err := http.NewRequest("POST", s.url, buffer.logStringToSend)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
 		return
@@ -127,7 +127,6 @@ func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
 	//request.Header.Add("content-type", "application/json")
 	//request.SetBasicAuth("admin", "admin")
 	response, err := s.httpClient.Do(request)
-
 	if err != nil {
 		logging.Error.Printf("http.Do() error: %v\n", err)
 		return
@@ -135,10 +134,7 @@ func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
 		logging.Trace.Println("Do(Request) successful")
 		s.timerPostMinimum = time.Now() //reset timer post minimum
 	}
-	s.bufferToSend = SumoBuffer{
-		logStringToSend:          bytes.NewBufferString(""), //reset String
-		logEventsInCurrentBuffer: 0,                         //reset counter
-	}
+
 	defer response.Body.Close()
 
 }
