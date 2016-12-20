@@ -32,7 +32,7 @@ var (
 	boltDatabasePath     = "my.db"                   //default
 	tickerTime, errT     = time.ParseDuration("60s") //Default
 	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").Default("10").Int()
-	sumoPostMinimumDelay = kingpin.Flag("sumo-Post-Minimum-Delay", "Sumo Post Minimum Delay").Default("10s").Duration()
+	sumoPostMinimumDelay = kingpin.Flag("sumo-Post-Minimum-Delay", "Sumo Post Minimum Delay").Default("500ms").Duration()
 )
 
 var (
