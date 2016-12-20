@@ -20,13 +20,12 @@ type SumoLogicAppender struct {
 	nozzleQueue          *eventQueue.Queue
 	eventsBatchSize      int
 	sumoPostMinimumDelay time.Duration
-	timerPostMinimum     time.Time
-	bufferToSend         SumoBuffer
 }
 
 type SumoBuffer struct {
 	logStringToSend          *bytes.Buffer
 	logEventsInCurrentBuffer int
+	timerPostMinimum         time.Time
 }
 
 func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration) *SumoLogicAppender {
@@ -37,40 +36,34 @@ func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQue
 		nozzleQueue:          nozzleQueue,
 		eventsBatchSize:      eventsBatchSize,
 		sumoPostMinimumDelay: sumoPostMinimumDelay,
-		timerPostMinimum:     time.Now(),
-		bufferToSend: SumoBuffer{
-			logStringToSend:          bytes.NewBufferString(""),
-			logEventsInCurrentBuffer: 0,
-		},
+	}
+}
+
+func newBuffer() SumoBuffer {
+	return SumoBuffer{
+		logStringToSend:          bytes.NewBufferString(""),
+		logEventsInCurrentBuffer: 0,
+		timerPostMinimum:         time.Now(),
 	}
 }
 
 func (s *SumoLogicAppender) Start() {
 	runtime.GOMAXPROCS(1)
 	timer := time.Now()
-	Buffer := &SumoBuffer{
-		logStringToSend:          bytes.NewBufferString(""),
-		logEventsInCurrentBuffer: 0,
-	}
+	Buffer := newBuffer()
 	var mutex = &sync.Mutex{} //synchronize access to Buffer
-
 	logging.Info.Println("Starting Appender Worker")
-	for {
-		time.Sleep(300 * time.Millisecond) //delay
 
-		mutex.Lock()                                              //lock mutex to ensure exclusive access to buffer
+	for {
+		time.Sleep(300 * time.Millisecond)                        //delay
 		if Buffer.logEventsInCurrentBuffer >= s.eventsBatchSize { //if buffer is full, create a new one
-			Buffer = &SumoBuffer{
-				logStringToSend:          bytes.NewBufferString(""),
-				logEventsInCurrentBuffer: 0,
-			}
+			fmt.Println("Creating new Buffer")
+			Buffer = newBuffer()
 		}
-		mutex.Unlock()
+		mutex.Lock() //lock mutex to ensure exclusive access to buffer
 		// while queue is not empty && s.eventsBatchSize not completed, queue.POP (appendLogs)
 		for s.nozzleQueue.GetCount() != 0 && Buffer.logEventsInCurrentBuffer < s.eventsBatchSize {
-			mutex.Lock()         //lock mutex to ensure exclusive access to buffer
-			s.AppendLogs(Buffer) //this method POP an event from queue to Buffer
-			mutex.Unlock()
+			s.AppendLogs(&Buffer)                                     //this method POP an event from queue to Buffer
 			timer = time.Now()                                        //reset timer
 			if Buffer.logEventsInCurrentBuffer == s.eventsBatchSize { //if buffer is full, send logs to sumo
 				logging.Info.Println("Batch Size complete")
@@ -81,8 +74,7 @@ func (s *SumoLogicAppender) Start() {
 			}
 		}
 		//if batch size is met, send to sumo and reset temp buffer
-		mutex.Lock()
-		s.SendToSumo(Buffer)
+		go s.SendToSumo(&Buffer)
 		mutex.Unlock()
 		timer = time.Now() //reset timer
 	}
@@ -115,7 +107,7 @@ func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
 	//wait period between posts to Sumo
 	fmt.Println(buffer.logStringToSend.String())
 	fmt.Println("......................")
-	for time.Since(s.timerPostMinimum) < s.sumoPostMinimumDelay {
+	for time.Since(buffer.timerPostMinimum) < s.sumoPostMinimumDelay {
 		time.Sleep(30 * time.Millisecond) // wait to retry
 	}
 	logging.Trace.Println("Sending logs to Sumologic...")
@@ -132,7 +124,7 @@ func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
 		return
 	} else {
 		logging.Trace.Println("Do(Request) successful")
-		s.timerPostMinimum = time.Now() //reset timer post minimum
+		buffer.timerPostMinimum = time.Now() //reset timer post minimum
 	}
 
 	defer response.Body.Close()
