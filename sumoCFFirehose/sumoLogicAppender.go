@@ -2,6 +2,7 @@ package sumoCFFirehose
 
 import (
 	"bytes"
+	"compress/gzip"
 	"net/http"
 	"runtime"
 	"time"
@@ -113,12 +114,17 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 }
 
 func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
+	var buf bytes.Buffer
+	g := gzip.NewWriter(&buf)
+	g.Write(buffer.logStringToSend.Bytes())
+	g.Close()
+
 	for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
 		logging.Trace.Println("Delaying post to honor minimum post delay")
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	logging.Info.Println("Sending logs to Sumologic...")
+	logging.Info.Println("Sending logs to Sumo Logic...")
 	request, err := http.NewRequest("POST", s.url, buffer.logStringToSend)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
