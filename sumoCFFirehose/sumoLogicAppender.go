@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
-	"sync"
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
@@ -26,6 +25,7 @@ type SumoBuffer struct {
 	logStringToSend          *bytes.Buffer
 	logEventsInCurrentBuffer int
 	timerPostMinimum         time.Time
+	channelMessage           chan string
 }
 
 func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration) *SumoLogicAppender {
@@ -44,25 +44,29 @@ func newBuffer() SumoBuffer {
 		logStringToSend:          bytes.NewBufferString(""),
 		logEventsInCurrentBuffer: 0,
 		timerPostMinimum:         time.Now(),
+		channelMessage:           make(chan string),
 	}
 }
 
 func (s *SumoLogicAppender) Start() {
 	runtime.GOMAXPROCS(1)
 	timer := time.Now()
-	Buffer := newBuffer()
-	var mutex = &sync.Mutex{} //synchronize access to Buffer
+	Buffer := newBuffer() //creating Buffer
+	msgFromChannel := ""
 	logging.Info.Println("Starting Appender Worker")
-
 	for {
-		time.Sleep(300 * time.Millisecond)                        //delay
-		if Buffer.logEventsInCurrentBuffer >= s.eventsBatchSize { //if buffer is full, create a new one
+		fmt.Println("first for")
+		time.Sleep(300 * time.Millisecond)                                                             //delay
+		if Buffer.logEventsInCurrentBuffer >= s.eventsBatchSize || msgFromChannel == "Buffer in use" { //if buffer is full, create a new one
 			fmt.Println("Creating new Buffer")
+			fmt.Println(Buffer.logEventsInCurrentBuffer)
+			fmt.Println(msgFromChannel)
 			Buffer = newBuffer()
 		}
-		mutex.Lock() //lock mutex to ensure exclusive access to buffer
+		//mutex.Lock() //lock mutex to ensure exclusive access to buffer
 		// while queue is not empty && s.eventsBatchSize not completed, queue.POP (appendLogs)
 		for s.nozzleQueue.GetCount() != 0 && Buffer.logEventsInCurrentBuffer < s.eventsBatchSize {
+			fmt.Println("second for")
 			s.AppendLogs(&Buffer)                                     //this method POP an event from queue to Buffer
 			timer = time.Now()                                        //reset timer
 			if Buffer.logEventsInCurrentBuffer == s.eventsBatchSize { //if buffer is full, send logs to sumo
@@ -73,9 +77,10 @@ func (s *SumoLogicAppender) Start() {
 				break
 			}
 		}
-		//if batch size is met, send to sumo and reset temp buffer
+		//if batch size is met, send to sumo
 		go s.SendToSumo(&Buffer)
-		mutex.Unlock()
+		msgFromChannel = <-Buffer.channelMessage
+
 		timer = time.Now() //reset timer
 	}
 
@@ -104,6 +109,7 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 }
 
 func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
+	buffer.channelMessage <- "Buffer in use"
 	//wait period between posts to Sumo
 	fmt.Println(buffer.logStringToSend.String())
 	fmt.Println("......................")
@@ -128,5 +134,5 @@ func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
 	}
 
 	defer response.Body.Close()
-
+	buffer.channelMessage <- "Buffer finished"
 }
