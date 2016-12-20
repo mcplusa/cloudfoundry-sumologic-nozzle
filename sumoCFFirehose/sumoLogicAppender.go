@@ -62,7 +62,7 @@ func (s *SumoLogicAppender) Start() {
 
 		if time.Since(Buffer.timerIdlebuffer).Seconds() >= 10 && Buffer.logEventsInCurrentBuffer > 0 {
 			logging.Info.Println("Sending current batch of logs after timer exceeded limit")
-			go s.SendToSumo(&Buffer)
+			go s.SendToSumo(Buffer)
 			Buffer = newBuffer()
 			Buffer.timerIdlebuffer = time.Now()
 			continue
@@ -78,7 +78,7 @@ func (s *SumoLogicAppender) Start() {
 					s.AppendLogs(&Buffer)
 					Buffer.timerIdlebuffer = time.Now()
 				}
-				go s.SendToSumo(&Buffer)
+				go s.SendToSumo(Buffer)
 				Buffer = newBuffer()
 			} else {
 				logging.Trace.Println("Pushing Logs to Buffer: ")
@@ -113,7 +113,8 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 
 }
 
-func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
+func (s *SumoLogicAppender) SendToSumo(buffer SumoBuffer) {
+
 	var buf bytes.Buffer
 	g := gzip.NewWriter(&buf)
 	g.Write(buffer.logStringToSend.Bytes())
@@ -125,13 +126,14 @@ func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
 	}
 
 	logging.Info.Println("Sending logs to Sumo Logic...")
-	request, err := http.NewRequest("POST", s.url, buffer.logStringToSend)
+	request, err := http.NewRequest("POST", s.url, &buf)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
 		return
 	}
-	//request.Header.Add("content-type", "application/json")
+	request.Header.Add("Content-Encoding", "gzip")
 	//request.SetBasicAuth("admin", "admin")
+
 	response, err := s.httpClient.Do(request)
 	if err != nil {
 		logging.Error.Printf("http.Do() error: %v\n", err)
