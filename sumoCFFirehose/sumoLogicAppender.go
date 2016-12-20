@@ -19,12 +19,13 @@ type SumoLogicAppender struct {
 	nozzleQueue          *eventQueue.Queue
 	eventsBatchSize      int
 	sumoPostMinimumDelay time.Duration
+	timerBetweenPost     time.Time
 }
 
 type SumoBuffer struct {
 	logStringToSend          *bytes.Buffer
 	logEventsInCurrentBuffer int
-	timerPostMinimum         time.Time
+	timerIdlebuffer          time.Time
 	channelMessage           chan string
 }
 
@@ -43,21 +44,21 @@ func newBuffer() SumoBuffer {
 	return SumoBuffer{
 		logStringToSend:          bytes.NewBufferString(""),
 		logEventsInCurrentBuffer: 0,
-		timerPostMinimum:         time.Now(),
 		channelMessage:           make(chan string),
 	}
 }
 
 func (s *SumoLogicAppender) Start() {
+	s.timerBetweenPost = time.Now()
 	runtime.GOMAXPROCS(1)
-	timer := time.Now()
-	Buffer := newBuffer() //creating Buffer
+	Buffer := newBuffer()               //creating Buffer
+	Buffer.timerIdlebuffer = time.Now() //starting timerPostMinimum
 	msgFromChannel := ""
 	logging.Info.Println("Starting Appender Worker")
 	for {
 		fmt.Println("first for")
-		time.Sleep(300 * time.Millisecond)                                                             //delay
-		if Buffer.logEventsInCurrentBuffer >= s.eventsBatchSize || msgFromChannel == "Buffer in use" { //if buffer is full, create a new one
+		time.Sleep(300 * time.Millisecond)                                                                 //delay
+		if Buffer.logEventsInCurrentBuffer >= s.eventsBatchSize || msgFromChannel == "Buffer being sent" { //if buffer is full, create a new one
 			fmt.Println("Creating new Buffer")
 			fmt.Println(Buffer.logEventsInCurrentBuffer)
 			fmt.Println(msgFromChannel)
@@ -68,20 +69,23 @@ func (s *SumoLogicAppender) Start() {
 		for s.nozzleQueue.GetCount() != 0 && Buffer.logEventsInCurrentBuffer < s.eventsBatchSize {
 			fmt.Println("second for")
 			s.AppendLogs(&Buffer)                                     //this method POP an event from queue to Buffer
-			timer = time.Now()                                        //reset timer
+			Buffer.timerIdlebuffer = time.Now()                       //reset buffer timer, buffer has new content
 			if Buffer.logEventsInCurrentBuffer == s.eventsBatchSize { //if buffer is full, send logs to sumo
 				logging.Info.Println("Batch Size complete")
 				break
-			} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
+			} else if time.Since(Buffer.timerIdlebuffer).Seconds() >= 10 { // else if buffer timer is up, send existing logs to sumo
 				logging.Info.Println("Sending current batch of logs after timer exceeded limit")
 				break
 			}
 		}
-		//if batch size is met, send to sumo
+		//wait period between posts to Sumo
+		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
+			time.Sleep(30 * time.Millisecond) // wait to retry
+		}
 		go s.SendToSumo(&Buffer)
 		msgFromChannel = <-Buffer.channelMessage
 
-		timer = time.Now() //reset timer
+		Buffer.timerIdlebuffer = time.Now() //reset Buffer timer
 	}
 
 }
@@ -109,13 +113,10 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 }
 
 func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
-	buffer.channelMessage <- "Buffer in use"
-	//wait period between posts to Sumo
+	buffer.channelMessage <- "Buffer being sent"
 	fmt.Println(buffer.logStringToSend.String())
 	fmt.Println("......................")
-	for time.Since(buffer.timerPostMinimum) < s.sumoPostMinimumDelay {
-		time.Sleep(30 * time.Millisecond) // wait to retry
-	}
+
 	logging.Trace.Println("Sending logs to Sumologic...")
 	request, err := http.NewRequest("POST", s.url, buffer.logStringToSend)
 	if err != nil {
@@ -130,9 +131,8 @@ func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
 		return
 	} else {
 		logging.Trace.Println("Do(Request) successful")
-		buffer.timerPostMinimum = time.Now() //reset timer post minimum
+		s.timerBetweenPost = time.Now() //reset timer post minimum
 	}
 
 	defer response.Body.Close()
-	buffer.channelMessage <- "Buffer finished"
 }
