@@ -3,6 +3,7 @@ package sumoCFFirehose
 import (
 	"bytes"
 	"net/http"
+	"runtime"
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
@@ -11,47 +12,84 @@ import (
 )
 
 type SumoLogicAppender struct {
-	url                      string
-	connectionTimeout        int //10000
-	httpClient               http.Client
-	nozzleQueue              *eventQueue.Queue
-	eventsBatchSize          int
-	logEventsInCurrentBuffer int
-	logStringToSend          *bytes.Buffer
+	url                  string
+	connectionTimeout    int //10000
+	httpClient           http.Client
+	nozzleQueue          *eventQueue.Queue
+	eventsBatchSize      int
+	sumoPostMinimumDelay time.Duration
+	timerBetweenPost     time.Time
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int) *SumoLogicAppender {
+type SumoBuffer struct {
+	logStringToSend          *bytes.Buffer
+	logEventsInCurrentBuffer int
+	timerIdlebuffer          time.Time
+}
+
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration) *SumoLogicAppender {
 	return &SumoLogicAppender{
-		url:                      urlValue,
-		connectionTimeout:        connectionTimeoutValue,
-		httpClient:               http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
-		nozzleQueue:              nozzleQueue,
-		eventsBatchSize:          eventsBatchSize,
-		logEventsInCurrentBuffer: 0,
+		url:                  urlValue,
+		connectionTimeout:    connectionTimeoutValue,
+		httpClient:           http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
+		nozzleQueue:          nozzleQueue,
+		eventsBatchSize:      eventsBatchSize,
+		sumoPostMinimumDelay: sumoPostMinimumDelay,
+	}
+}
+
+func newBuffer() SumoBuffer {
+	return SumoBuffer{
 		logStringToSend:          bytes.NewBufferString(""),
+		logEventsInCurrentBuffer: 0,
 	}
 }
 
 func (s *SumoLogicAppender) Start() {
-	timer := time.Now()
+	s.timerBetweenPost = time.Now()
+	runtime.GOMAXPROCS(1)
+	Buffer := newBuffer()
+	Buffer.timerIdlebuffer = time.Now()
 	logging.Info.Println("Starting Appender Worker")
 	for {
-		time.Sleep(300 * time.Millisecond)
-		// while queue is not empty && s.eventsBatchSize not completed, queue.POP (appendLogs)
-		for s.nozzleQueue.GetCount() != 0 && s.logEventsInCurrentBuffer <= s.eventsBatchSize {
-			s.AppendLogs()                                       //this method POP an event from queue
-			timer = time.Now()                                   //reset timer
-			if s.logEventsInCurrentBuffer == s.eventsBatchSize { //if buffer is full, send logs to sumo
-				logging.Trace.Println("Batch Size complete")
-				break
-			} else if time.Since(timer).Seconds() >= 10 { // else if timer is up, send existing logs to sumo
-				logging.Trace.Println("Sending current batch of logs after timer exceeded limit")
-				break
+		logging.Info.Println("Log queue size: ")
+		logging.Info.Println(s.nozzleQueue.GetCount())
+		if s.nozzleQueue.GetCount() == 0 {
+			logging.Trace.Println("Waiting for 300 ms")
+			time.Sleep(300 * time.Millisecond)
+		}
+
+		if time.Since(Buffer.timerIdlebuffer).Seconds() >= 10 && Buffer.logEventsInCurrentBuffer > 0 {
+			logging.Info.Println("Sending current batch of logs after timer exceeded limit")
+			go s.SendToSumo(&Buffer)
+			Buffer = newBuffer()
+			Buffer.timerIdlebuffer = time.Now()
+			continue
+		}
+
+		if s.nozzleQueue.GetCount() != 0 {
+			queueCount := s.nozzleQueue.GetCount()
+			remainingBufferCount := s.eventsBatchSize - Buffer.logEventsInCurrentBuffer
+			if queueCount >= remainingBufferCount {
+				logging.Trace.Println("Pushing Logs to Sumo: ")
+				logging.Trace.Println(remainingBufferCount)
+				for i := 0; i < remainingBufferCount; i++ {
+					s.AppendLogs(&Buffer)
+					Buffer.timerIdlebuffer = time.Now()
+				}
+				go s.SendToSumo(&Buffer)
+				Buffer = newBuffer()
+			} else {
+				logging.Trace.Println("Pushing Logs to Buffer: ")
+				logging.Trace.Println(queueCount)
+				for i := 0; i < queueCount; i++ {
+					s.AppendLogs(&Buffer)
+					Buffer.timerIdlebuffer = time.Now()
+				}
 			}
 		}
-		s.SendToSumo(s.logStringToSend)
-		timer = time.Now() //reset timer
 	}
+
 }
 
 func StringBuilder(event *events.Event) string {
@@ -68,15 +106,20 @@ func StringBuilder(event *events.Event) string {
 	return buf.String()
 }
 
-func (s *SumoLogicAppender) AppendLogs() {
-	// the appender calls for the next message in the queue and parse it to a string
-	s.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop())))
-	s.logEventsInCurrentBuffer++
+func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
+	buffer.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop())))
+	buffer.logEventsInCurrentBuffer++
+
 }
 
-func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
-	logging.Trace.Println("Sending logs to Sumologic...")
-	request, err := http.NewRequest("POST", s.url, log)
+func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
+	for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
+		logging.Trace.Println("Delaying post to honor minimum post delay")
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	logging.Info.Println("Sending logs to Sumologic...")
+	request, err := http.NewRequest("POST", s.url, buffer.logStringToSend)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
 		return
@@ -84,15 +127,13 @@ func (s *SumoLogicAppender) SendToSumo(log *bytes.Buffer) {
 	//request.Header.Add("content-type", "application/json")
 	//request.SetBasicAuth("admin", "admin")
 	response, err := s.httpClient.Do(request)
-
 	if err != nil {
 		logging.Error.Printf("http.Do() error: %v\n", err)
 		return
 	} else {
-		logging.Trace.Println("Do(Request) successful")
+		logging.Trace.Println("Post of logs successful")
+		s.timerBetweenPost = time.Now()
 	}
-	s.logEventsInCurrentBuffer = 0                // reset counter
-	s.logStringToSend = bytes.NewBufferString("") //reset String
-	defer response.Body.Close()
 
+	defer response.Body.Close()
 }
