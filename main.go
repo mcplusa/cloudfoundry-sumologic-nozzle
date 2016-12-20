@@ -19,19 +19,20 @@ import (
 )
 
 var (
-	debug             = true                                                   //debug", "Enable debug mode, print in console
-	apiEndpoint       = kingpin.Flag("api-endpoint", "Sumo Endpoint").String() //"https://api.bosh-lite.com"
-	sumoEndpoint      = kingpin.Flag("sumo-endpoint", "Sumo Endpoint").String()
-	dopplerEndpoint   = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
-	subscriptionId    = kingpin.Flag("subscription-id", "Id for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
-	user              = "firehose_user"     //user created in CF, authorized to connect the firehose
-	password          = "firehose_password" // password created along with the firehose_user
-	skipSSLValidation = kingpin.Flag("skip-ssl-validation", "Please don't").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
-	keepAlive, errK   = time.ParseDuration("25s") //default
-	wantedEvents      = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
-	boltDatabasePath  = "my.db"                   //default
-	tickerTime, errT  = time.ParseDuration("60s") //Default
-	eventsBatchSize   = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").Int()
+	debug                = true                                                   //debug", "Enable debug mode, print in console
+	apiEndpoint          = kingpin.Flag("api-endpoint", "Sumo Endpoint").String() //"https://api.bosh-lite.com"
+	sumoEndpoint         = kingpin.Flag("sumo-endpoint", "Sumo Endpoint").String()
+	dopplerEndpoint      = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
+	subscriptionId       = kingpin.Flag("subscription-id", "Id for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
+	user                 = "firehose_user"     //user created in CF, authorized to connect the firehose
+	password             = "firehose_password" // password created along with the firehose_user
+	skipSSLValidation    = kingpin.Flag("skip-ssl-validation", "Please don't").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
+	keepAlive, errK      = time.ParseDuration("25s") //default
+	wantedEvents         = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
+	boltDatabasePath     = "my.db"                   //default
+	tickerTime, errT     = time.ParseDuration("60s") //Default
+	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").Default("10").Int()
+	sumoPostMinimumDelay = kingpin.Flag("sumo-Post-Minimum-Delay", "Sumo Post Minimum Delay").Default("500ms").Duration()
 )
 
 var (
@@ -80,7 +81,7 @@ func main() {
 
 	logging.Info.Println("Creating queue")
 	queue := eventQueue.NewQueue(make([]*events.Event, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, &queue, *eventsBatchSize)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, &queue, *eventsBatchSize, *sumoPostMinimumDelay)
 	go loggingClientSumo.Start() //multi
 
 	logging.Info.Println("Creating Events")
