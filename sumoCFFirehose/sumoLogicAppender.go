@@ -2,6 +2,7 @@ package sumoCFFirehose
 
 import (
 	"bytes"
+	"compress/gzip"
 	"net/http"
 	"runtime"
 	"time"
@@ -61,7 +62,7 @@ func (s *SumoLogicAppender) Start() {
 
 		if time.Since(Buffer.timerIdlebuffer).Seconds() >= 10 && Buffer.logEventsInCurrentBuffer > 0 {
 			logging.Info.Println("Sending current batch of logs after timer exceeded limit")
-			go s.SendToSumo(&Buffer)
+			go s.SendToSumo(Buffer.logStringToSend.String())
 			Buffer = newBuffer()
 			Buffer.timerIdlebuffer = time.Now()
 			continue
@@ -77,7 +78,7 @@ func (s *SumoLogicAppender) Start() {
 					s.AppendLogs(&Buffer)
 					Buffer.timerIdlebuffer = time.Now()
 				}
-				go s.SendToSumo(&Buffer)
+				go s.SendToSumo(Buffer.logStringToSend.String())
 				Buffer = newBuffer()
 			} else {
 				logging.Trace.Println("Pushing Logs to Buffer: ")
@@ -112,20 +113,27 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 
 }
 
-func (s *SumoLogicAppender) SendToSumo(buffer *SumoBuffer) {
+func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
+
+	var buf bytes.Buffer
+	g := gzip.NewWriter(&buf)
+	g.Write([]byte(logStringToSend))
+	g.Close()
+
 	for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
 		logging.Trace.Println("Delaying post to honor minimum post delay")
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	logging.Info.Println("Sending logs to Sumologic...")
-	request, err := http.NewRequest("POST", s.url, buffer.logStringToSend)
+	logging.Info.Println("Sending logs to Sumo Logic...")
+	request, err := http.NewRequest("POST", s.url, &buf)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
 		return
 	}
-	//request.Header.Add("content-type", "application/json")
+	request.Header.Add("Content-Encoding", "gzip")
 	//request.SetBasicAuth("admin", "admin")
+
 	response, err := s.httpClient.Do(request)
 	if err != nil {
 		logging.Error.Printf("http.Do() error: %v\n", err)
