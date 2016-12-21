@@ -138,6 +138,24 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 	if err != nil {
 		logging.Error.Printf("http.Do() error: %v\n", err)
 		return
+	} else if response.StatusCode == 429 { //that the endpoint needs some time and dropped the post sent
+		logging.Trace.Println("Endpoint dropped the post send")
+		logging.Trace.Println("Waiting for 300 ms to retry")
+		time.Sleep(300 * time.Millisecond)
+		responseRetry, errRetry := s.httpClient.Do(request)
+		for responseRetry.StatusCode == 429 {
+			logging.Trace.Println("Waiting for 300 ms to retry")
+			time.Sleep(300 * time.Millisecond)
+			responseRetry, errRetry = s.httpClient.Do(request)
+		}
+		if errRetry != nil {
+			logging.Error.Printf("http.Do() error: %v\n", err)
+			return
+		} else {
+			logging.Trace.Println("Post of logs successful")
+			s.timerBetweenPost = time.Now()
+		}
+
 	} else {
 		logging.Trace.Println("Post of logs successful")
 		s.timerBetweenPost = time.Now()
