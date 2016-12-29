@@ -125,7 +125,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	//logging.Info.Println("Sending logs to Sumo Logic...")
 	request, err := http.NewRequest("POST", s.url, &buf)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
@@ -138,27 +137,35 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 	if err != nil {
 		logging.Error.Printf("http.Do() error: %v\n", err)
 		return
-	} else if response.StatusCode == 429 { //that the endpoint needs some time and dropped the post sent
-		logging.Trace.Println("Endpoint dropped the post send")
-		logging.Trace.Println("Waiting for 300 ms to retry")
+	} else if response.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500 {
+		logging.Info.Println("Endpoint dropped the post send")
+		logging.Info.Println("Waiting for 300 ms to retry")
 		time.Sleep(300 * time.Millisecond)
 		responseRetry, errRetry := s.httpClient.Do(request)
-		for responseRetry.StatusCode == 429 {
-			logging.Trace.Println("Waiting for 300 ms to retry")
-			time.Sleep(300 * time.Millisecond)
-			responseRetry, errRetry = s.httpClient.Do(request)
-		}
 		if errRetry != nil {
-			logging.Error.Printf("http.Do() error: %v\n", err)
+			logging.Error.Printf("http.Do() error: %v\n", errRetry)
 			return
 		} else {
-			logging.Trace.Println("Post of logs successful")
-
-			s.timerBetweenPost = time.Now()
+			maxAttempts := 5
+			for i := 0; i <= maxAttempts; i++ {
+				if responseRetry.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500 {
+					logging.Info.Println("Waiting for 300 ms to retry...")
+					time.Sleep(300 * time.Millisecond)
+					responseRetry, errRetry = s.httpClient.Do(request)
+					if errRetry != nil {
+						logging.Error.Printf("http.Do() error: %v\n", errRetry)
+						return
+					} else {
+						logging.Info.Println("Post of logs successful (after retry)")
+					}
+				}
+				s.timerBetweenPost = time.Now()
+			}
+			logging.Info. /*Trace*/ Println("Not possible to send the logs after the maximum number of possible attempts")
 		}
 
-	} else {
-		logging.Trace.Println("Post of logs successful")
+	} else if response.StatusCode == 200 {
+		logging.Info. /*Trace*/ Println("Post of logs successful")
 		s.timerBetweenPost = time.Now()
 	}
 
