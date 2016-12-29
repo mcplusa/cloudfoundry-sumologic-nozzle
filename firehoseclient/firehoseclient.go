@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
+	//"github.com/gorilla/websocket"
 )
 
 type FirehoseNozzle struct {

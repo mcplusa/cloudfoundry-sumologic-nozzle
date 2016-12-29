@@ -53,8 +53,8 @@ func (s *SumoLogicAppender) Start() {
 	Buffer.timerIdlebuffer = time.Now()
 	logging.Info.Println("Starting Appender Worker")
 	for {
-		logging.Info.Println("Log queue size: ")
-		logging.Info.Println(s.nozzleQueue.GetCount())
+		//logging.Trace.Println("Log queue size: ")
+		//logging.Trace.Println(s.nozzleQueue.GetCount())
 		if s.nozzleQueue.GetCount() == 0 {
 			logging.Trace.Println("Waiting for 300 ms")
 			time.Sleep(300 * time.Millisecond)
@@ -125,7 +125,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	logging.Info.Println("Sending logs to Sumo Logic...")
+	//logging.Info.Println("Sending logs to Sumo Logic...")
 	request, err := http.NewRequest("POST", s.url, &buf)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
@@ -133,8 +133,8 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 	}
 	request.Header.Add("Content-Encoding", "gzip")
 	//request.SetBasicAuth("admin", "admin")
-
 	response, err := s.httpClient.Do(request)
+
 	if err != nil {
 		logging.Error.Printf("http.Do() error: %v\n", err)
 		return
@@ -153,6 +153,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 			return
 		} else {
 			logging.Trace.Println("Post of logs successful")
+
 			s.timerBetweenPost = time.Now()
 		}
 
