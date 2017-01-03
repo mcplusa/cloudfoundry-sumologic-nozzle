@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	apiEndpoint          = kingpin.Flag("api-endpoint", "Api Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String() //"https://api.bosh-lite.com"
+	apiEndpoint          = kingpin.Flag("api-endpoint", "Api Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String()
 	sumoEndpoint         = kingpin.Flag("sumo-endpoint", "Sumo Endpoint").OverrideDefaultFromEnvar("SUMO_ENDPOINT").String()
 	dopplerEndpoint      = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
 	subscriptionId       = kingpin.Flag("subscription-id", "Id for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
