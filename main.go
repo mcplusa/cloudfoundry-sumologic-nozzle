@@ -29,8 +29,8 @@ var (
 	wantedEvents         = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
 	boltDatabasePath     = "my.db"                   //default
 	tickerTime, errT     = time.ParseDuration("60s") //Default
-	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").OverrideDefaultFromEnvar("LOG_EVENTS_BATCH_SIZE").Default("10").Int()
-	sumoPostMinimumDelay = kingpin.Flag("sumo-post-minimum-delay", "Sumo Post Minimum Delay").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Default("500ms").Duration()
+	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").OverrideDefaultFromEnvar("LOG_EVENTS_BATCH_SIZE").Int()
+	sumoPostMinimumDelay = kingpin.Flag("sumo-post-minimum-delay", "Sumo Post Minimum Delay").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Duration()
 )
 
 var (
@@ -54,7 +54,6 @@ func main() {
 	logging.Info.Println("Cloudfoundry User: " + *user)
 
 	logging.Info.Printf("Events Batch Size: [%d]\n", *eventsBatchSize)
-	/**/ fmt.Println(*sumoPostMinimumDelay)
 	logging.Info.Println("Starting firehose-to-sumo " + version)
 
 	c := cfclient.Config{
