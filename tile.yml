@@ -1,0 +1,76 @@
+---
+# The high-level description of your tile.
+# Replace these properties with real values.
+#
+name: firehose-to-sumologic # By convention lowercase with dashes
+icon_file: resources/sumo_128x128-B.png
+label: Sumo Logic Firehose Nozzle for PCF
+description: Forward firehose logs to Sumo Logic
+
+# Global defaults (all optional)
+#
+# org: test-org                         # Name of org to create for your apps
+# space: test-space                     # Name of space to create for your apps
+org_quota: 4096                       # Optional, memory quota in mb
+
+stemcell_criteria:
+  os: ubuntu-trusty
+  requires_cpi: false
+  version: '3263'
+
+properties:
+- name: author
+  type: string
+  label: Author
+  value: mcplusa.com
+
+
+packages:
+- name: my-application
+  type: app
+  manifest:
+    # any options that you would normally specify in a cf manifest.yml, including</i>
+    buildpack: https://github.com/cloudfoundry/go-buildpack.git
+    command: firehose-to-sumologic
+    path: firehose-to-sumologic.zip
+  health_check: none
+  needs_cf_credentials: true
+  enable_global_access_to_plans: true
+
+
+forms:
+- name: sumo-logic-config
+  label: Sumo Destination
+  description: Sumo target configuration
+  properties:
+  - name: sumo-endpoint
+    type: string
+    label: Sumo Logic Endpoint
+    description: Sumo Logic Endpoint to send logs to
+
+- name: cf-config
+  label: Cloud Foundry Settings
+  description: Cloud Foundry connection details
+  properties:
+  - name: cloudfoundry-user
+    type: string
+    label: Cloudfoundry User
+    description: Nozzle user
+  - name: cloudfoundry-password
+    type: secret
+    label: Cloudfoundry Password
+    description: Password for API user
+  - name: api-endpoint
+    type: string
+    label: Cloudfoundry Api Endpoint
+    description: Api endpoint for CF
+  - name: log-events-batch-size
+    type: string
+    label: Log Events Batch Size
+    description: Events Batch Size to send to Sumo Logic
+    optional: true
+  - name: sumo-post-minimum-delay
+    type: string
+    label: sumo-post-minimum-delay
+    description: delay between post to Sumo Logic
+    optional: true

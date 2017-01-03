@@ -19,20 +19,18 @@ import (
 )
 
 var (
-	debug                = true                                                   //debug", "Enable debug mode, print in console
-	apiEndpoint          = kingpin.Flag("api-endpoint", "Sumo Endpoint").String() //"https://api.bosh-lite.com"
-	sumoEndpoint         = kingpin.Flag("sumo-endpoint", "Sumo Endpoint").String()
+	apiEndpoint          = kingpin.Flag("api-endpoint", "Api Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String()
+	sumoEndpoint         = kingpin.Flag("sumo-endpoint", "Sumo Endpoint").OverrideDefaultFromEnvar("SUMO_ENDPOINT").String()
 	dopplerEndpoint      = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
 	subscriptionId       = kingpin.Flag("subscription-id", "Id for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
-	user                 = "firehose_user"     //user created in CF, authorized to connect the firehose
-	password             = "firehose_password" // password created along with the firehose_user
-	skipSSLValidation    = kingpin.Flag("skip-ssl-validation", "Please don't").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
-	keepAlive, errK      = time.ParseDuration("25s") //default
+	user                 = kingpin.Flag("cloudfoundry-user", "Cloudfoundry User").OverrideDefaultFromEnvar("CLOUDFOUNDRY_USER").String()             //user created in CF, authorized to connect the firehose
+	password             = kingpin.Flag("cloudfoundry-password", "Cloudfoundry Password").OverrideDefaultFromEnvar("CLOUDFOUNDRY_PASSWORD").String() // password created along with the firehose_user                                                                                                           //kingpin.Flag("skip-ssl-validation", "Please don't").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
+	keepAlive, errK      = time.ParseDuration("25s")                                                                                                 //default
 	wantedEvents         = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
 	boltDatabasePath     = "my.db"                   //default
 	tickerTime, errT     = time.ParseDuration("60s") //Default
-	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").Default("10").Int()
-	sumoPostMinimumDelay = kingpin.Flag("sumo-Post-Minimum-Delay", "Sumo Post Minimum Delay").Default("500ms").Duration()
+	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").OverrideDefaultFromEnvar("LOG_EVENTS_BATCH_SIZE").Int()
+	sumoPostMinimumDelay = kingpin.Flag("sumo-post-minimum-delay", "Sumo Post Minimum Delay").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Duration()
 )
 
 var (
@@ -53,17 +51,16 @@ func main() {
 	logging.Info.Println("Sumo Endpoint: " + *sumoEndpoint)
 	logging.Info.Println("Cloudfoundry Doppler Endpoint: " + *dopplerEndpoint)
 	logging.Info.Println("Cloudfoundry Nozzle Subscription ID: " + *subscriptionId)
-	logging.Info.Println("Cloudfoundry User: " + user)
+	logging.Info.Println("Cloudfoundry User: " + *user)
 
-	logging.Info.Printf("Events Batch Size: [%d]\n", eventsBatchSize)
-
+	logging.Info.Printf("Events Batch Size: [%d]\n", *eventsBatchSize)
 	logging.Info.Println("Starting firehose-to-sumo " + version)
 
 	c := cfclient.Config{
 		ApiAddress:        *apiEndpoint,
-		Username:          user,
-		Password:          password,
-		SkipSslValidation: *skipSSLValidation,
+		Username:          *user,
+		Password:          *password,
+		SkipSslValidation: true,
 	}
 	cfClient, _ := cfclient.NewClient(&c)
 
@@ -105,7 +102,7 @@ func main() {
 
 	firehoseConfig := &firehoseclient.FirehoseConfig{
 		TrafficControllerURL:   cfClient.Endpoint.DopplerEndpoint,
-		InsecureSSLSkipVerify:  *skipSSLValidation,
+		InsecureSSLSkipVerify:  true,
 		IdleTimeoutSeconds:     keepAlive,
 		FirehoseSubscriptionID: *subscriptionId,
 	}
