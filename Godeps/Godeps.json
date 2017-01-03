@@ -9,11 +9,6 @@
 			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
 		},
 		{
-			"ImportPath": "github.com/Sirupsen/logrus/hooks/syslog",
-			"Comment": "v0.10.0",
-			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
-		},
-		{
 			"ImportPath": "github.com/alecthomas/template",
 			"Rev": "b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0"
 		},

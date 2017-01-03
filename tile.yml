@@ -12,14 +12,11 @@ description: Forward firehose logs to Sumo Logic
 # org: test-org                         # Name of org to create for your apps
 # space: test-space                     # Name of space to create for your apps
 org_quota: 4096                       # Optional, memory quota in mb
-#apply_open_security_group: true       # Apply open security group, default: false
-#allow_paid_service_plans: true        # Allow paid service plans, default: false
-#apply_open_security_group: true         # Apply open security group, default: false
+
 stemcell_criteria:
   os: ubuntu-trusty
   requires_cpi: false
   version: '3263'
-
 
 properties:
 - name: author
@@ -27,21 +24,19 @@ properties:
   label: Author
   value: mcplusa.com
 
-# Add properties you want to pass to your applications.
-# Properties specified here will not be configurable by the user.
-#
-# properties:
-# - name: example_property
-#   type: string
-#   default: specify a value
-#   label: Label for the field on the GUI
-#   description: Longer description of the field's purpose
 
+packages:
+- name: my-application
+  type: app
+  manifest:
+    # any options that you would normally specify in a cf manifest.yml, including</i>
+    buildpack: https://github.com/cloudfoundry/go-buildpack.git
+    command: firehose-to-sumologic
+    path: firehose-to-sumologic.zip
+  health_check: none
+  needs_cf_credentials: true
+  enable_global_access_to_plans: true
 
-#stemcell_criteria:
-  #os: ubuntu-trusty
-  #requires_cpi: false
-  #version: '3263'
 
 forms:
 - name: sumo-logic-config
@@ -56,23 +51,7 @@ forms:
 - name: cf-config
   label: Cloud Foundry Settings
   description: Cloud Foundry connection details
-#    On deployments with runtimes 1.8.9/1.7.29 and above,
-#    the built in user `splunk-firehose` will be used when no user is specified.
-#
-#    API user is **required** for earlier versions of the Elastic Runtimes.
-#    Failing to specify the API user on versions without `splunk-firehose` will result in:
-#
-#    ```
-#    unknown property "splunk_firehose_credentials"...
-#    ```
-
-#    See the docs for detailed instructions on creating a user.
   properties:
-#  - name: add_app_info
-#    type: boolean
-#    default: false
-#    label: Add app info
-#    description: When true, nozzle will query cloud controller to add name, space, org. This will greatly increase load on the cloud controller.
   - name: cloudfoundry-user
     type: string
     label: Cloudfoundry User
@@ -85,7 +64,6 @@ forms:
     type: string
     label: Cloudfoundry Api Endpoint
     description: Api endpoint for CF
-    #optional: true
   - name: log-events-batch-size
     type: string
     label: Log Events Batch Size
@@ -96,21 +74,3 @@ forms:
     label: sumo-post-minimum-delay
     description: delay between post to Sumo Logic
     optional: true
-
-packages:
-- name: my-application
-  type: app
-  manifest:
-    # any options that you would normally specify in a cf manifest.yml, including</i>
-    buildpack: https://github.com/cloudfoundry/go-buildpack.git
-    command: firehose-to-sumologic
-    #domain:
-    #host:
-    #instances:
-    #memory:
-    path: firehose-to-sumologic.zip
-    #env:
-    #services:
-  health_check: none                 # optional
-  needs_cf_credentials: true         # optional
-  enable_global_access_to_plans: true
