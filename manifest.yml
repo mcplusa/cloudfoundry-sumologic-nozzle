@@ -1,11 +1,6 @@
 applications:
 - name: firehose-to-sumologic
 env:
-  API_ENDPOINT: https://api.run-05.haas-71.pez.pivotal.io
-  SUMO_ENDPOINT: https://endpoint1.collection.us2.sumologic.com/receiver/v1/http/ZaVnC4dhaV2MwJEtQ6LkXUg5aQJhwUCBW3l7m4hjJTCc_155MxHewswvcCfrE0uaqaKGc7MiNc4S3ErkJNBnVO7GekQpuVjE5Vn-LD5L_JvKjxHptCbnhA==
-  DOPPLER_ENDPOINT: wss://doppler.bosh-lite.com:443
   FIREHOSE_SUBSCRIPTION_ID: firehose-to-sumologic
-  CLOUDFOUNDRY_USER: admin
-  CLOUDFOUNDRY_PASSWORD: admin
   LOG_EVENTS_BATCHSIZE: 200
   SUMO_POST_MINIMUM_DELAY: 200ms
