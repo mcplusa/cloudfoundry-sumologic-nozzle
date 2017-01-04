@@ -22,6 +22,9 @@ type SumoLogicAppender struct {
 	eventsBatchSize      int
 	sumoPostMinimumDelay time.Duration
 	timerBetweenPost     time.Time
+	sumoCategory         string
+	sumoName             string
+	sumoClient           string
 }
 
 type SumoBuffer struct {
@@ -30,7 +33,7 @@ type SumoBuffer struct {
 	timerIdlebuffer          time.Time
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoClient string) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:                  urlValue,
 		connectionTimeout:    connectionTimeoutValue,
@@ -38,6 +41,9 @@ func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQue
 		nozzleQueue:          nozzleQueue,
 		eventsBatchSize:      eventsBatchSize,
 		sumoPostMinimumDelay: sumoPostMinimumDelay,
+		sumoCategory:         sumoCategory,
+		sumoName:             sumoName,
+		sumoClient:           sumoClient,
 	}
 }
 
@@ -115,7 +121,6 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 }
 
 func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
-
 	var buf bytes.Buffer
 	g := gzip.NewWriter(&buf)
 	g.Write([]byte(logStringToSend))
@@ -131,8 +136,18 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
 		return
 	}
+
 	request.Header.Add("Content-Encoding", "gzip")
-	//request.SetBasicAuth("admin", "admin")
+
+	if s.sumoName != "" {
+		request.Header.Add("X-Sumo-Name", s.sumoName)
+	}
+	if s.sumoClient != "" {
+		request.Header.Add("X-Sumo-Client", s.sumoClient)
+	}
+	if s.sumoCategory != "" {
+		request.Header.Add("X-Sumo-Category", s.sumoCategory)
+	}
 	response, err := s.httpClient.Do(request)
 
 	if (err != nil) || (response.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500) {
@@ -147,7 +162,18 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 			if err != nil {
 				logging.Error.Printf("http.NewRequest() error: %v\n", err)
 			}
+			request.Header.Add("X-Sumo-Name", "HTTPTestString")
 			request.Header.Add("Content-Encoding", "gzip")
+
+			if s.sumoName != "" {
+				request.Header.Add("X-Sumo-Name", s.sumoName)
+			}
+			if s.sumoClient != "" {
+				request.Header.Add("X-Sumo-Client", s.sumoClient)
+			}
+			if s.sumoCategory != "" {
+				request.Header.Add("X-Sumo-Category", s.sumoCategory)
+			}
 			response, errRetry = s.httpClient.Do(request)
 			if errRetry != nil {
 				logging.Error.Printf("http.Do() error: %v\n", errRetry)

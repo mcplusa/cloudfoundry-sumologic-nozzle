@@ -31,9 +31,9 @@ var (
 	tickerTime, errT     = time.ParseDuration("60s") //Default
 	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").OverrideDefaultFromEnvar("LOG_EVENTS_BATCH_SIZE").Int()
 	sumoPostMinimumDelay = kingpin.Flag("sumo-post-minimum-delay", "Sumo Post Minimum Delay").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Duration()
-	sumoCategory         = kingpin.Flag("sumo-category", "Sumo Category").OverrideDefaultFromEnvar("SUMO_CATEGORY").String()
-	sumoName             = kingpin.Flag("sumo-name", "Sumo Name").OverrideDefaultFromEnvar("SUMO_NAME").String()
-	sumoClient           = kingpin.Flag("sumo-client", "Sumo Client").OverrideDefaultFromEnvar("SUMO_CLIENT").String()
+	sumoCategory         = kingpin.Flag("sumo-category", "Sumo Category").Default("").OverrideDefaultFromEnvar("SUMO_CATEGORY").String()
+	sumoName             = kingpin.Flag("sumo-name", "Sumo Name").Default("").OverrideDefaultFromEnvar("SUMO_NAME").String()
+	sumoClient           = kingpin.Flag("sumo-client", "Sumo Client").Default("").OverrideDefaultFromEnvar("SUMO_CLIENT").String()
 )
 
 var (
@@ -81,7 +81,7 @@ func main() {
 
 	logging.Info.Println("Creating queue")
 	queue := eventQueue.NewQueue(make([]*events.Event, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, &queue, *eventsBatchSize, *sumoPostMinimumDelay)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, &queue, *eventsBatchSize, *sumoPostMinimumDelay, *sumoCategory, *sumoName, *sumoClient)
 	go loggingClientSumo.Start() //multi
 
 	logging.Info.Println("Creating Events")
