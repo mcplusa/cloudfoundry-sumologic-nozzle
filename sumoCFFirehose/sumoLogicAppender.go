@@ -3,6 +3,8 @@ package sumoCFFirehose
 import (
 	"bytes"
 	"compress/gzip"
+	"errors"
+	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -53,8 +55,7 @@ func (s *SumoLogicAppender) Start() {
 	Buffer.timerIdlebuffer = time.Now()
 	logging.Info.Println("Starting Appender Worker")
 	for {
-		logging.Info.Println("Log queue size: ")
-		logging.Info.Println(s.nozzleQueue.GetCount())
+		logging.Info.Printf("Log queue size: %d", s.nozzleQueue.GetCount())
 		if s.nozzleQueue.GetCount() == 0 {
 			logging.Trace.Println("Waiting for 300 ms")
 			time.Sleep(300 * time.Millisecond)
@@ -125,7 +126,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	logging.Info.Println("Sending logs to Sumo Logic...")
 	request, err := http.NewRequest("POST", s.url, &buf)
 	if err != nil {
 		logging.Error.Printf("http.NewRequest() error: %v\n", err)
@@ -133,15 +133,90 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 	}
 	request.Header.Add("Content-Encoding", "gzip")
 	//request.SetBasicAuth("admin", "admin")
-
 	response, err := s.httpClient.Do(request)
-	if err != nil {
-		logging.Error.Printf("http.Do() error: %v\n", err)
-		return
-	} else {
-		logging.Trace.Println("Post of logs successful")
+
+	if (err != nil) || (response.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500) {
+		logging.Info.Println("Endpoint dropped the post send")
+		logging.Info.Println("Waiting for 300 ms to retry")
+		time.Sleep(300 * time.Millisecond)
+		statusCode := 0
+		err := Retry(func(attempt int) (bool, error) {
+			var errRetry error
+			//create again request
+			request, err := http.NewRequest("POST", s.url, &buf)
+			if err != nil {
+				logging.Error.Printf("http.NewRequest() error: %v\n", err)
+			}
+			request.Header.Add("Content-Encoding", "gzip")
+			response, errRetry = s.httpClient.Do(request)
+			if errRetry != nil {
+				logging.Error.Printf("http.Do() error: %v\n", errRetry)
+				logging.Info.Println("Waiting for 300 ms to retry after error")
+				fmt.Println(attempt)
+				time.Sleep(300 * time.Millisecond)
+				return attempt < 5, errRetry
+			} else if response.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500 {
+				logging.Info.Println("Endpoint dropped the post send again")
+				logging.Info.Println("Waiting for 300 ms to retry after a retry ...")
+				fmt.Println(attempt)
+				statusCode = response.StatusCode
+				time.Sleep(300 * time.Millisecond)
+				return attempt < 5, errRetry
+			} else if response.StatusCode == 200 {
+				logging.Info. /*Trace*/ Println("Post of logs successful after retry...")
+				s.timerBetweenPost = time.Now()
+				statusCode = response.StatusCode
+				return true, err
+			}
+			return attempt < 5, errRetry
+		})
+		if err != nil {
+			logging.Error.Println("Error, Not able to post after retry")
+			logging.Error.Printf("http.Do() error: %v\n", err)
+			return
+		} else if statusCode != 200 {
+			logging.Error.Printf("Not able to post after retry, with status code: %d", statusCode)
+		}
+	} else if response.StatusCode == 200 {
+		logging.Info. /*Trace*/ Println("Post of logs successful")
 		s.timerBetweenPost = time.Now()
 	}
+	if response != nil {
+		defer response.Body.Close()
+	}
 
-	defer response.Body.Close()
+}
+
+//-------------------------------------------------
+
+// MaxRetries is the maximum number of retries before bailing.
+var MaxRetries = 10
+var errMaxRetriesReached = errors.New("exceeded retry limit")
+
+// Func represents functions that can be retried.
+type Func func(attempt int) (retry bool, err error)
+
+// Do keeps trying the function until the second argument
+// returns false, or no error is returned.
+func Retry(fn Func) error {
+	var err error
+	var cont bool
+	attempt := 1
+	for {
+		cont, err = fn(attempt)
+		if !cont || err == nil {
+			break
+		}
+		attempt++
+		if attempt > MaxRetries {
+			return errMaxRetriesReached
+		}
+	}
+	return err
+}
+
+// IsMaxRetries checks whether the error is due to hitting the
+// maximum number of retries or not.
+func IsMaxRetries(err error) bool {
+	return err == errMaxRetriesReached
 }

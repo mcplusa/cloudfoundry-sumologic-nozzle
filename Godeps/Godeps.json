@@ -1,15 +1,10 @@
 {
-	"ImportPath": "github.com/cloudfoundry-community/firehose-to-sumologic",
+	"ImportPath": "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic",
 	"GoVersion": "go1.7",
 	"GodepVersion": "v75",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.10.0",
-			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
-		},
-		{
-			"ImportPath": "github.com/Sirupsen/logrus/hooks/syslog",
 			"Comment": "v0.10.0",
 			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
 		},

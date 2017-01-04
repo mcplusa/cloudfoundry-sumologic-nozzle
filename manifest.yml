@@ -1,14 +1,6 @@
 applications:
 - name: firehose-to-sumologic
 env:
-  API_ENDPOINT: https://api.bosh-lite.com
-  DEBUG: false
-  DOPPLER_ENDPOINT: wss://doppler.bosh-lite.com:443
-  EVENTS: LogMessage,ValueMetric,Error,ContainerMetric
-  FIREHOSE_USER: firehose_user
-  FIREHOSE_PASSWORD: firehose_admin
   FIREHOSE_SUBSCRIPTION_ID: firehose-to-sumologic
-  LOG_EVENT_TOTALS: true
-  LOG_EVENT_TOTALS_TIME: 10s
-  SKIP_SSL_VALIDATION: true
-  SYSLOG_ENDPOINT: 10.0.0.218:5514
+  LOG_EVENTS_BATCHSIZE: 200
+  SUMO_POST_MINIMUM_DELAY: 200ms
