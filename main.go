@@ -31,6 +31,9 @@ var (
 	tickerTime, errT     = time.ParseDuration("60s") //Default
 	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").OverrideDefaultFromEnvar("LOG_EVENTS_BATCH_SIZE").Int()
 	sumoPostMinimumDelay = kingpin.Flag("sumo-post-minimum-delay", "Sumo Post Minimum Delay").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Duration()
+	sumoCategory         = kingpin.Flag("sumo-category", "Sumo Category").OverrideDefaultFromEnvar("SUMO_CATEGORY").String()
+	sumoName             = kingpin.Flag("sumo-name", "Sumo Name").OverrideDefaultFromEnvar("SUMO_NAME").String()
+	sumoClient           = kingpin.Flag("sumo-client", "Sumo Client").OverrideDefaultFromEnvar("SUMO_CLIENT").String()
 )
 
 var (
