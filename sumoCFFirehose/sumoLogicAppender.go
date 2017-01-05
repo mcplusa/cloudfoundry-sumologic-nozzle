@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
-	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -148,6 +147,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 	if s.sumoCategory != "" {
 		request.Header.Add("X-Sumo-Category", s.sumoCategory)
 	}
+
 	response, err := s.httpClient.Do(request)
 
 	if (err != nil) || (response.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500) {
@@ -162,7 +162,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 			if err != nil {
 				logging.Error.Printf("http.NewRequest() error: %v\n", err)
 			}
-			request.Header.Add("X-Sumo-Name", "HTTPTestString")
 			request.Header.Add("Content-Encoding", "gzip")
 
 			if s.sumoName != "" {
@@ -178,13 +177,11 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 			if errRetry != nil {
 				logging.Error.Printf("http.Do() error: %v\n", errRetry)
 				logging.Info.Println("Waiting for 300 ms to retry after error")
-				fmt.Println(attempt)
 				time.Sleep(300 * time.Millisecond)
 				return attempt < 5, errRetry
 			} else if response.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500 {
 				logging.Info.Println("Endpoint dropped the post send again")
 				logging.Info.Println("Waiting for 300 ms to retry after a retry ...")
-				fmt.Println(attempt)
 				statusCode = response.StatusCode
 				time.Sleep(300 * time.Millisecond)
 				return attempt < 5, errRetry
