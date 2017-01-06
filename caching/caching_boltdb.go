@@ -34,6 +34,7 @@ func NewCachingBolt(gcfClientSet *cfClient.Client, boltDatabasePath string) Cach
 }
 
 func (c *CachingBolt) CreateBucket() {
+	//start to write inside the db
 	c.Appdb.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte("AppBucket"))
 		if err != nil {
@@ -65,7 +66,6 @@ func (c *CachingBolt) fillDatabase(listApps []App) {
 			if err != nil {
 				return fmt.Errorf("create bucket: %s", err)
 			}
-
 			serialize, err := json.Marshal(app)
 
 			if err != nil {
@@ -98,7 +98,8 @@ func (c *CachingBolt) GetAppByGuid(appGuid string) []App {
 		app.SpaceData.Entity.OrgData.Entity.Guid,
 		c.isOptOut(app.Environment),
 	})
-	c.fillDatabase(apps)
+	//commented for not filling the db
+	//	c.fillDatabase(apps)
 	return apps
 
 }
@@ -130,8 +131,8 @@ func (c *CachingBolt) GetAllApp() []App {
 			c.isOptOut(app.Environment),
 		})
 	}
-
-	c.fillDatabase(apps)
+	//commented for not filling the db
+	//c.fillDatabase(apps)
 	//fmt.Printf("Found [%d] Apps!", len(apps))
 
 	return apps

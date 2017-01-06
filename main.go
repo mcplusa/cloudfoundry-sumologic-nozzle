@@ -85,7 +85,7 @@ func main() {
 	go loggingClientSumo.Start() //multi
 
 	logging.Info.Println("Creating Events")
-	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, &queue)
+	events := eventRouting.NewEventRouting(cachingClient, &queue)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		logging.Error.Fatal("Error setting up event routing: ", err)

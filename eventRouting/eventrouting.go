@@ -5,13 +5,10 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	fevents "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
-	"github.com/Sirupsen/logrus"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
@@ -20,16 +17,14 @@ type EventRouting struct {
 	selectedEvents      map[string]bool
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
-	sLAppender          sumoCFFirehose.SumoLogicAppender //**
 	queue               *eventQueue.Queue
 }
 
-func NewEventRouting(caching caching.Caching, sLAppender sumoCFFirehose.SumoLogicAppender, queue *eventQueue.Queue) *EventRouting {
+func NewEventRouting(caching caching.Caching, queue *eventQueue.Queue) *EventRouting {
 	return &EventRouting{
 		CachingClient:       caching,
 		selectedEvents:      make(map[string]bool),
 		selectedEventsCount: make(map[string]uint64),
-		sLAppender:          sLAppender, //**
 		queue:               queue,
 		mutex:               &sync.Mutex{},
 	}
@@ -118,7 +113,7 @@ func GetListAuthorizedEventEvents() (authorizedEvents string) {
 	return strings.Join(arrEvents, ", ")
 }
 
-func (e *EventRouting) GetTotalCountOfSelectedEvents() uint64 {
+/*func (e *EventRouting) GetTotalCountOfSelectedEvents() uint64 {
 	var total = uint64(0)
 	for _, count := range e.GetSelectedEventsCount() {
 		total += count
@@ -148,9 +143,9 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 			e.queue.Push(event)
 		}
 	}()
-}
+}*/
 
-func (e *EventRouting) getEventTotals(totalElapsedTime float64, elapsedTime float64, lastCount uint64) (*fevents.Event, uint64) {
+/*func (e *EventRouting) getEventTotals(totalElapsedTime float64, elapsedTime float64, lastCount uint64) (*fevents.Event, uint64) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	totalCount := e.GetTotalCountOfSelectedEvents()
@@ -172,3 +167,4 @@ func (e *EventRouting) getEventTotals(totalElapsedTime float64, elapsedTime floa
 	event.AnnotateWithMetaData(map[string]string{})
 	return event, totalCount
 }
+*/
