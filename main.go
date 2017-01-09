@@ -78,10 +78,6 @@ func main() {
 	}
 	cfClient, _ := cfclient.NewClient(&c)
 
-	/*if len(*dopplerEndpoint) > 0 {
-		cfClient.Endpoint.DopplerEndpoint = *dopplerEndpoint
-	}*/ //TODO
-
 	//Creating Caching
 	var cachingClient caching.Caching
 	if caching.IsNeeded(*wantedEvents) {
