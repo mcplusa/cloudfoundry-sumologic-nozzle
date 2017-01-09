@@ -19,25 +19,25 @@ import (
 )
 
 var (
-	apiEndpoint          = kingpin.Flag("api-endpoint", "Api Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String()
-	sumoEndpoint         = kingpin.Flag("sumo-endpoint", "Sumo Endpoint").OverrideDefaultFromEnvar("SUMO_ENDPOINT").String()
-	dopplerEndpoint      = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
-	subscriptionId       = kingpin.Flag("subscription-id", "Id for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
-	user                 = kingpin.Flag("cloudfoundry-user", "Cloudfoundry User").OverrideDefaultFromEnvar("CLOUDFOUNDRY_USER").String()             //user created in CF, authorized to connect the firehose
-	password             = kingpin.Flag("cloudfoundry-password", "Cloudfoundry Password").OverrideDefaultFromEnvar("CLOUDFOUNDRY_PASSWORD").String() // password created along with the firehose_user                                                                                                           //kingpin.Flag("skip-ssl-validation", "Please don't").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
-	keepAlive, errK      = time.ParseDuration("25s")                                                                                                 //default
-	wantedEvents         = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
-	boltDatabasePath     = "my.db"                   //default
-	tickerTime, errT     = time.ParseDuration("60s") //Default
+	apiEndpoint  = kingpin.Flag("api-endpoint", "CF API Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String()
+	sumoEndpoint = kingpin.Flag("sumo-endpoint", "Sumo Logic Endpoint").OverrideDefaultFromEnvar("SUMO_ENDPOINT").String()
+	//dopplerEndpoint      = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
+	subscriptionId       = kingpin.Flag("subscription-id", "Cloud Foundry ID for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
+	user                 = kingpin.Flag("cloudfoundry-user", "Cloud Foundry User").OverrideDefaultFromEnvar("CLOUDFOUNDRY_USER").String()             //user created in CF, authorized to connect the firehose
+	password             = kingpin.Flag("cloudfoundry-password", "Cloud Foundry Password").OverrideDefaultFromEnvar("CLOUDFOUNDRY_PASSWORD").String() // password created along with the firehose_user                                                                                                           //kingpin.Flag("skip-ssl-validation", "Please don't").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
+	keepAlive, errK      = time.ParseDuration("25s")                                                                                                  //default Error, ContainerMetric, HttpStart, HttpStop, HttpStartStop, LogMessage, ValueMetric, CounterEvent
+	wantedEvents         = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("Error, ContainerMetric, HttpStart, HttpStop, HttpStartStop, LogMessage, ValueMetric, CounterEvent").OverrideDefaultFromEnvar("EVENTS").String()
+	boltDatabasePath     = "event.db"
+	tickerTime           = kingpin.Flag("nozzle-polling-period", "Nozzle Polling Period").Default("15s").OverrideDefaultFromEnvar("NOZZLE_POLLING_PERIOD").Duration()
 	eventsBatchSize      = kingpin.Flag("log-events-batch-size", "Log Events Batch Size").OverrideDefaultFromEnvar("LOG_EVENTS_BATCH_SIZE").Int()
-	sumoPostMinimumDelay = kingpin.Flag("sumo-post-minimum-delay", "Sumo Post Minimum Delay").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Duration()
-	sumoCategory         = kingpin.Flag("sumo-category", "Sumo Category").Default("").OverrideDefaultFromEnvar("SUMO_CATEGORY").String()
-	sumoName             = kingpin.Flag("sumo-name", "Sumo Name").Default("").OverrideDefaultFromEnvar("SUMO_NAME").String()
-	sumoClient           = kingpin.Flag("sumo-client", "Sumo Client").Default("").OverrideDefaultFromEnvar("SUMO_CLIENT").String()
+	sumoPostMinimumDelay = kingpin.Flag("sumo-post-minimum-delay", "Sumo Logic HTTP Post Minimum Delay").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Duration()
+	sumoCategory         = kingpin.Flag("sumo-category", "Sumo Logic Category").Default("").OverrideDefaultFromEnvar("SUMO_CATEGORY").String()
+	sumoName             = kingpin.Flag("sumo-name", "Sumo Logic Name").Default("").OverrideDefaultFromEnvar("SUMO_NAME").String()
+	sumoHost             = kingpin.Flag("sumo-host", "Sumo Logic Host").Default("").OverrideDefaultFromEnvar("SUMO_HOST").String()
 )
 
 var (
-	version = "0.0.0"
+	version = "0.1"
 )
 
 func main() {
@@ -49,15 +49,26 @@ func main() {
 
 	runtime.GOMAXPROCS(1)
 
-	logging.Info.Println("Configurations set:")
-	logging.Info.Println("Api Endpoint: " + *apiEndpoint)
-	logging.Info.Println("Sumo Endpoint: " + *sumoEndpoint)
-	logging.Info.Println("Cloudfoundry Doppler Endpoint: " + *dopplerEndpoint)
-	logging.Info.Println("Cloudfoundry Nozzle Subscription ID: " + *subscriptionId)
-	logging.Info.Println("Cloudfoundry User: " + *user)
-
-	logging.Info.Printf("Events Batch Size: [%d]\n", *eventsBatchSize)
-	logging.Info.Println("Starting firehose-to-sumo " + version)
+	logging.Info.Println("Set Configurations:")
+	logging.Info.Println("CF API Endpoint: t" + *apiEndpoint)
+	logging.Info.Println("Sumo Logic Endpoint: " + *sumoEndpoint)
+	//logging.Info.Println("Cloud foundry Doppler Endpoint: " + *dopplerEndpoint) //TODO
+	logging.Info.Println("Cloud Foundry Nozzle Subscription ID: " + *subscriptionId)
+	logging.Info.Println("Cloud Foundry User: " + *user)
+	logging.Info.Println("Events Selected: " + *wantedEvents)
+	logging.Info.Printf("Nozzle Polling Period: %v\n", *tickerTime)
+	logging.Info.Printf("Log Events Batch Size: [%d]\n", *eventsBatchSize)
+	logging.Info.Printf("Sumo Logic HTTP Post Minimum Delay: %v\n", *sumoPostMinimumDelay)
+	if *sumoName != "" {
+		logging.Info.Println("Sumo Logic Name: " + *sumoName)
+	}
+	if *sumoHost != "" {
+		logging.Info.Println("Sumo Logic Host: " + *sumoHost)
+	}
+	if *sumoCategory != "" {
+		logging.Info.Println("Sumo Logic Category: " + *sumoCategory)
+	}
+	logging.Info.Println("Starting Sumo Logic Nozzle " + version)
 
 	c := cfclient.Config{
 		ApiAddress:        *apiEndpoint,
@@ -66,10 +77,6 @@ func main() {
 		SkipSslValidation: true,
 	}
 	cfClient, _ := cfclient.NewClient(&c)
-
-	if len(*dopplerEndpoint) > 0 {
-		cfClient.Endpoint.DopplerEndpoint = *dopplerEndpoint
-	}
 
 	//Creating Caching
 	var cachingClient caching.Caching
@@ -81,11 +88,11 @@ func main() {
 
 	logging.Info.Println("Creating queue")
 	queue := eventQueue.NewQueue(make([]*events.Event, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 1000, &queue, *eventsBatchSize, *sumoPostMinimumDelay, *sumoCategory, *sumoName, *sumoClient)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 5000, &queue, *eventsBatchSize, *sumoPostMinimumDelay, *sumoCategory, *sumoName, *sumoHost)
 	go loggingClientSumo.Start() //multi
 
 	logging.Info.Println("Creating Events")
-	events := eventRouting.NewEventRouting(cachingClient, *loggingClientSumo, &queue)
+	events := eventRouting.NewEventRouting(cachingClient, &queue)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {
 		logging.Error.Fatal("Error setting up event routing: ", err)
@@ -100,8 +107,12 @@ func main() {
 	apps := cachingClient.GetAllApp()
 	logging.Info.Printf("Done filling cache! Found [%d] Apps \n", len(apps))
 
+	logging.Info.Println("Apps found: ")
+	for i := 0; i < len(apps); i++ {
+		logging.Info.Printf("[%d] "+apps[i].Name+" GUID: "+apps[i].Guid, i+1)
+	}
 	//Let's start the goRoutine
-	cachingClient.PerformPoollingCaching(tickerTime)
+	cachingClient.PerformPoollingCaching(*tickerTime)
 
 	firehoseConfig := &firehoseclient.FirehoseConfig{
 		TrafficControllerURL:   cfClient.Endpoint.DopplerEndpoint,

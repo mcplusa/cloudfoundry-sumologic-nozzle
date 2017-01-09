@@ -34,6 +34,7 @@ func NewCachingBolt(gcfClientSet *cfClient.Client, boltDatabasePath string) Cach
 }
 
 func (c *CachingBolt) CreateBucket() {
+	//start to write inside the db
 	c.Appdb.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte("AppBucket"))
 		if err != nil {
@@ -65,7 +66,6 @@ func (c *CachingBolt) fillDatabase(listApps []App) {
 			if err != nil {
 				return fmt.Errorf("create bucket: %s", err)
 			}
-
 			serialize, err := json.Marshal(app)
 
 			if err != nil {
@@ -89,6 +89,7 @@ func (c *CachingBolt) GetAppByGuid(appGuid string) []App {
 	if err != nil {
 		return apps
 	}
+
 	apps = append(apps, App{
 		app.Name,
 		app.Guid,
@@ -98,13 +99,13 @@ func (c *CachingBolt) GetAppByGuid(appGuid string) []App {
 		app.SpaceData.Entity.OrgData.Entity.Guid,
 		c.isOptOut(app.Environment),
 	})
+
 	c.fillDatabase(apps)
 	return apps
 
 }
 
 func (c *CachingBolt) GetAllApp() []App {
-
 	var apps []App
 
 	defer func() {
@@ -112,12 +113,10 @@ func (c *CachingBolt) GetAllApp() []App {
 			//logging.LogError("Recovered in caching.GetAllApp()", r)
 		}
 	}()
-
 	cfApps, err := c.GcfClient.ListApps()
 	if err != nil {
 		return apps
 	}
-
 	for _, app := range cfApps {
 		//fmt.Printf("App [%s] Found... \n", app.Name)
 		apps = append(apps, App{
@@ -130,7 +129,6 @@ func (c *CachingBolt) GetAllApp() []App {
 			c.isOptOut(app.Environment),
 		})
 	}
-
 	c.fillDatabase(apps)
 	//fmt.Printf("Found [%d] Apps!", len(apps))
 
@@ -138,7 +136,6 @@ func (c *CachingBolt) GetAllApp() []App {
 }
 
 func (c *CachingBolt) GetAppInfo(appGuid string) App {
-
 	var d []byte
 	var app App
 	c.Appdb.View(func(tx *bolt.Tx) error {
