@@ -136,9 +136,9 @@ func StringBuilder(event *events.Event, verboseLogMessages bool) string {
 			msg = message
 		}
 	case "LogMessage":
+		timestamp := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String()
+		event.Fields["timestamp"] = timestamp
 		if verboseLogMessages == true {
-			timestamp := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String()
-			event.Fields["timestamp"] = timestamp
 			message, err := json.Marshal(event)
 			if err == nil {
 				msg = message
@@ -146,6 +146,7 @@ func StringBuilder(event *events.Event, verboseLogMessages bool) string {
 		} else {
 			eventNoVerbose := events.Event{
 				Fields: map[string]interface{}{
+					"timestamp":   event.Fields["timestamp"],
 					"cf_app_guid": event.Fields["cf_app_id"],
 				},
 				Msg:  event.Msg,

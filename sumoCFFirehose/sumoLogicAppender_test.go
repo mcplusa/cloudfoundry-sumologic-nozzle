@@ -73,7 +73,7 @@ func testStringBuilderVerboseLogsFalse(t *testing.T) {
 	}
 	finalMessage := StringBuilder(&eventVerboseLogMessage, false)
 
-	assert.False(t, assert.Contains(t, finalMessage, "timestamp", ""), "should be false")
+	assert.False(t, assert.Contains(t, finalMessage, "source_type", ""), "should be false")
 
 }
 
@@ -97,6 +97,6 @@ func testStringBuilderVerboseLogsTrue(t *testing.T) {
 	}
 	finalMessage := StringBuilder(&eventVerboseLogMessage, true)
 
-	assert.True(t, assert.Contains(t, finalMessage, "timestamp", ""), "should be true")
+	assert.True(t, assert.Contains(t, finalMessage, "source_type", ""), "should be true")
 
 }

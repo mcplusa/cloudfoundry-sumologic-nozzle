@@ -46,7 +46,12 @@ forms:
   - name: sumo-endpoint
     type: string
     label: Sumo Logic Endpoint
-    description: Sumo Logic Endpoint to send logs to
+    description: Sumo Logic Endpoint where to send the logs
+  - name: sumo-post-minimum-delay
+    type: string
+    label: Sumo Logic Post Minimum Delay
+    description: Delay between post to Sumo Logic
+    default: 200ms
   - name: sumo-category
     type: string
     label: Sumo Logic Category
@@ -60,7 +65,7 @@ forms:
   - name: sumo-host
     type: string
     label: Sumo Logic Host
-    description: Sumo Logic Host
+    description: Sumo Logic Host (this will override the default in Sumo Logic)
     optional: true
 
 - name: cf-config
@@ -84,11 +89,6 @@ forms:
     label: Log Events Batch Size
     description: Events Batch Size to send to Sumo Logic
     default: 200
-  - name: sumo-post-minimum-delay
-    type: string
-    label: Sumo Logic Post Minimum Delay
-    description: Delay between post to Sumo Logic
-    default: 200ms
   - name: events
     type: string
     label: Comma separated list of events you would like (Default is "LogMessage")
