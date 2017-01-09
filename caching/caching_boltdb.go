@@ -89,6 +89,7 @@ func (c *CachingBolt) GetAppByGuid(appGuid string) []App {
 	if err != nil {
 		return apps
 	}
+
 	apps = append(apps, App{
 		app.Name,
 		app.Guid,
@@ -98,14 +99,13 @@ func (c *CachingBolt) GetAppByGuid(appGuid string) []App {
 		app.SpaceData.Entity.OrgData.Entity.Guid,
 		c.isOptOut(app.Environment),
 	})
-	//commented for not filling the db
-	//	c.fillDatabase(apps)
+
+	c.fillDatabase(apps)
 	return apps
 
 }
 
 func (c *CachingBolt) GetAllApp() []App {
-
 	var apps []App
 
 	defer func() {
@@ -113,12 +113,10 @@ func (c *CachingBolt) GetAllApp() []App {
 			//logging.LogError("Recovered in caching.GetAllApp()", r)
 		}
 	}()
-
 	cfApps, err := c.GcfClient.ListApps()
 	if err != nil {
 		return apps
 	}
-
 	for _, app := range cfApps {
 		//fmt.Printf("App [%s] Found... \n", app.Name)
 		apps = append(apps, App{
@@ -131,15 +129,13 @@ func (c *CachingBolt) GetAllApp() []App {
 			c.isOptOut(app.Environment),
 		})
 	}
-	//commented for not filling the db
-	//c.fillDatabase(apps)
+	c.fillDatabase(apps)
 	//fmt.Printf("Found [%d] Apps!", len(apps))
 
 	return apps
 }
 
 func (c *CachingBolt) GetAppInfo(appGuid string) App {
-
 	var d []byte
 	var app App
 	c.Appdb.View(func(tx *bolt.Tx) error {
