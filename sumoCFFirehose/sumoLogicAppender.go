@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
-	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -27,6 +26,7 @@ type SumoLogicAppender struct {
 	sumoCategory         string
 	sumoName             string
 	sumoHost             string
+	verboseLogMessages   bool
 }
 
 type SumoBuffer struct {
@@ -35,7 +35,7 @@ type SumoBuffer struct {
 	timerIdlebuffer          time.Time
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoHost string) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoHost string, verboseLogMessages bool) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:                  urlValue,
 		connectionTimeout:    connectionTimeoutValue,
@@ -46,6 +46,7 @@ func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQue
 		sumoCategory:         sumoCategory,
 		sumoName:             sumoName,
 		sumoHost:             sumoHost,
+		verboseLogMessages:   verboseLogMessages,
 	}
 }
 
@@ -106,7 +107,7 @@ func (s *SumoLogicAppender) Start() {
 
 }
 
-func StringBuilder(event *events.Event) string {
+func StringBuilder(event *events.Event, verboseLogMessages bool) string {
 
 	eventType := event.Type
 	var msg []byte
@@ -137,9 +138,24 @@ func StringBuilder(event *events.Event) string {
 	case "LogMessage":
 		timestamp := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String()
 		event.Fields["timestamp"] = timestamp
-		message, err := json.Marshal(event)
-		if err == nil {
-			msg = message
+		if verboseLogMessages == true {
+			message, err := json.Marshal(event)
+			if err == nil {
+				msg = message
+			}
+		} else {
+			eventNoVerbose := events.Event{
+				Fields: map[string]interface{}{
+					"timestamp":   event.Fields["timestamp"],
+					"cf_app_guid": event.Fields["cf_app_id"],
+				},
+				Msg:  event.Msg,
+				Type: event.Type,
+			}
+			message, err := json.Marshal(eventNoVerbose)
+			if err == nil {
+				msg = message
+			}
 		}
 	case "ValueMetric":
 		message, err := json.Marshal(event)
@@ -168,7 +184,7 @@ func StringBuilder(event *events.Event) string {
 }
 
 func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
-	buffer.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop())))
+	buffer.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop(), s.verboseLogMessages)))
 	buffer.logEventsInCurrentBuffer++
 
 }
@@ -179,7 +195,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 		g := gzip.NewWriter(&buf)
 		g.Write([]byte(logStringToSend))
 		g.Close()
-		fmt.Println(time.Since(s.timerBetweenPost))
 		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
 			logging.Info. /*Trace*/ Println("Delaying post to honor minimum post delay")
 			time.Sleep(100 * time.Millisecond)
@@ -199,7 +214,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 			request.Header.Add("X-Sumo-Host", s.sumoHost)
 		}
 		if s.sumoCategory != "" {
-			request.Header.Add("X-Sumo-Host", s.sumoCategory)
+			request.Header.Add("X-Sumo-Category", s.sumoCategory)
 		}
 
 		response, err := s.httpClient.Do(request)
@@ -225,7 +240,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 					request.Header.Add("X-Sumo-Host", s.sumoHost)
 				}
 				if s.sumoCategory != "" {
-					request.Header.Add("X-Sumo-Host", s.sumoCategory)
+					request.Header.Add("X-Sumo-Category", s.sumoCategory)
 				}
 				response, errRetry = s.httpClient.Do(request)
 				if errRetry != nil {
@@ -240,7 +255,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 					time.Sleep(300 * time.Millisecond)
 					return attempt < 5, errRetry
 				} else if response.StatusCode == 200 {
-					logging.Info. /*Trace*/ Println("Post of logs successful after retry...")
+					logging.Trace.Println("Post of logs successful after retry...")
 					s.timerBetweenPost = time.Now()
 					statusCode = response.StatusCode
 					return true, err
@@ -255,7 +270,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 				logging.Error.Printf("Not able to post after retry, with status code: %d", statusCode)
 			}
 		} else if response.StatusCode == 200 {
-			logging.Info. /*Trace*/ Println("Post of logs successful")
+			logging.Trace.Println("Post of logs successful")
 			s.timerBetweenPost = time.Now()
 		}
 
