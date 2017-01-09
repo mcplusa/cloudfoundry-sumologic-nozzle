@@ -50,17 +50,17 @@ forms:
   - name: sumo-category
     type: string
     label: Sumo Logic Category
-    description: Sumo Logic Category metadata
+    description: Sumo Logic Category (this will override the default in Sumo Logic)
     optional: true
   - name: sumo-name
     type: string
     label: Sumo Logic Name
-    description: Sumo Logic Name metadata
+    description: Sumo Logic Name (this will override the default in Sumo Logic)
     optional: true
-  - name: sumo-client
+  - name: sumo-host
     type: string
-    label: Sumo Logic Client
-    description: Sumo Logic Client metadata
+    label: Sumo Logic Host
+    description: Sumo Logic Host
     optional: true
 
 - name: cf-config
@@ -69,23 +69,39 @@ forms:
   properties:
   - name: cloudfoundry-user
     type: string
-    label: Cloudfoundry User
+    label: Cloud Foundry User
     description: Nozzle user
   - name: cloudfoundry-password
     type: secret
-    label: Cloudfoundry Password
+    label: Cloud Foundry Password
     description: Password for API user
   - name: api-endpoint
     type: string
-    label: Cloudfoundry Api Endpoint
-    description: Api endpoint for CF
+    label: Cloud Foundry API Endpoint
+    description: API endpoint for CF
   - name: log-events-batch-size
     type: string
     label: Log Events Batch Size
     description: Events Batch Size to send to Sumo Logic
-    optional: true
+    default: 200
   - name: sumo-post-minimum-delay
     type: string
     label: Sumo Logic Post Minimum Delay
-    description: delay between post to Sumo Logic
-    optional: true
+    description: Delay between post to Sumo Logic
+    default: 200ms
+  - name: events
+    type: string
+    label: Comma separated list of events you would like (Default is "LogMessage")
+    default: LogMessage
+    description: Valid options are Error, ContainerMetric, HttpStart, HttpStop, HttpStartStop, LogMessage, ValueMetric, CounterEvent
+  - name: nozzle-polling-period
+    type: string
+    label: Nozzle Polling Period
+    default: 15s
+    description: Time delay between checking the Nozzle for more events
+  - name: f2s-disable-logging
+    type: boolean
+    label: Disable Logging (Nozzle's Logs)
+    default: true
+    description: Handle if the Nozzle logs will be ignored and not send to Sumo Logic
+    configurable: false
