@@ -34,7 +34,7 @@ var (
 	sumoCategory         = kingpin.Flag("sumo-category", "Sumo Logic Category").Default("").OverrideDefaultFromEnvar("SUMO_CATEGORY").String()
 	sumoName             = kingpin.Flag("sumo-name", "Sumo Logic Name").Default("").OverrideDefaultFromEnvar("SUMO_NAME").String()
 	sumoHost             = kingpin.Flag("sumo-host", "Sumo Logic Host").Default("").OverrideDefaultFromEnvar("SUMO_HOST").String()
-	verboseLogMessages   = kingpin.Flag("verbose-log-messages", "Verbose Log Messages").Default("false").OverrideDefaultFromEnvar("VERBOSE_LOG_MESSAGES").Bool()
+	verboseLogMessages   = kingpin.Flag("verbose-log-messages", "Verbose Log Messages").Default("true").OverrideDefaultFromEnvar("VERBOSE_LOG_MESSAGES").Bool()
 )
 
 var (
