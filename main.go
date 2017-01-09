@@ -34,6 +34,7 @@ var (
 	sumoCategory         = kingpin.Flag("sumo-category", "Sumo Logic Category").Default("").OverrideDefaultFromEnvar("SUMO_CATEGORY").String()
 	sumoName             = kingpin.Flag("sumo-name", "Sumo Logic Name").Default("").OverrideDefaultFromEnvar("SUMO_NAME").String()
 	sumoHost             = kingpin.Flag("sumo-host", "Sumo Logic Host").Default("").OverrideDefaultFromEnvar("SUMO_HOST").String()
+	verboseLogMessages   = kingpin.Flag("verbose-log-messages", "Verbose Log Messages").Default("true").OverrideDefaultFromEnvar("VERBOSE_LOG_MESSAGES").Bool()
 )
 
 var (
@@ -68,6 +69,7 @@ func main() {
 	if *sumoCategory != "" {
 		logging.Info.Println("Sumo Logic Category: " + *sumoCategory)
 	}
+	logging.Info.Printf("Verbose Log Messages: %v\n", *verboseLogMessages)
 	logging.Info.Println("Starting Sumo Logic Nozzle " + version)
 
 	c := cfclient.Config{
@@ -88,7 +90,7 @@ func main() {
 
 	logging.Info.Println("Creating queue")
 	queue := eventQueue.NewQueue(make([]*events.Event, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 5000, &queue, *eventsBatchSize, *sumoPostMinimumDelay, *sumoCategory, *sumoName, *sumoHost)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 5000, &queue, *eventsBatchSize, *sumoPostMinimumDelay, *sumoCategory, *sumoName, *sumoHost, *verboseLogMessages)
 	go loggingClientSumo.Start() //multi
 
 	logging.Info.Println("Creating Events")
