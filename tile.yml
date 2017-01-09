@@ -105,3 +105,8 @@ forms:
     default: true
     description: Handle if the Nozzle logs will be ignored and not send to Sumo Logic
     configurable: false
+  - name: verbose-log-messages
+    type: boolean
+    label: Verbose in LogMessage event
+    default: true
+    description: If is false, it will send only the LogMessage and the App id
