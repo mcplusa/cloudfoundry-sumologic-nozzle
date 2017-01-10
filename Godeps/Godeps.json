@@ -103,10 +103,6 @@
 			"Rev": "2baa8a1b9338cf13d9eeb27696d761155fa480be"
 		},
 		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "9d4e42a20653790449273b3c85e67d6d8bae6e2e"
-		},
-		{
 			"ImportPath": "gopkg.in/alecthomas/kingpin.v2",
 			"Comment": "v2.1.11",
 			"Rev": "8cccfa8eb2e3183254457fb1749b2667fbc364c7"
