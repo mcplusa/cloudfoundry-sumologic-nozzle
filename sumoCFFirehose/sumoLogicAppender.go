@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"runtime"
 	"strings"
 	"time"
 
@@ -61,7 +60,6 @@ func newBuffer() SumoBuffer {
 
 func (s *SumoLogicAppender) Start() {
 	s.timerBetweenPost = time.Now()
-	runtime.GOMAXPROCS(1)
 	Buffer := newBuffer()
 	Buffer.timerIdlebuffer = time.Now()
 	logging.Info.Println("Starting Appender Worker")
