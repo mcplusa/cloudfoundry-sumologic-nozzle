@@ -58,7 +58,6 @@ func newBuffer() SumoBuffer {
 }
 
 func (s *SumoLogicAppender) Start() {
-	//var wg sync.WaitGroup
 	s.timerBetweenPost = time.Now()
 	runtime.GOMAXPROCS(1)
 	Buffer := newBuffer()
@@ -74,7 +73,7 @@ func (s *SumoLogicAppender) Start() {
 		if time.Since(Buffer.timerIdlebuffer).Seconds() >= 10 && Buffer.logEventsInCurrentBuffer > 0 {
 			logging.Info.Println("Sending current batch of logs after timer exceeded limit")
 			//wg.Add(1)
-			go s.SendToSumo(Buffer.logStringToSend.String() /*, &wg*/)
+			go s.SendToSumo(Buffer.logStringToSend.String())
 			Buffer = newBuffer()
 			Buffer.timerIdlebuffer = time.Now()
 			continue
@@ -90,8 +89,8 @@ func (s *SumoLogicAppender) Start() {
 					s.AppendLogs(&Buffer)
 					Buffer.timerIdlebuffer = time.Now()
 				}
-				//wg.Add(1)
-				go s.SendToSumo(Buffer.logStringToSend.String() /*, &wg*/)
+
+				go s.SendToSumo(Buffer.logStringToSend.String())
 				Buffer = newBuffer()
 			} else {
 				logging.Trace.Println("Pushing Logs to Buffer: ")
@@ -102,13 +101,12 @@ func (s *SumoLogicAppender) Start() {
 				}
 			}
 		}
-		//wg.Wait()
+
 	}
 
 }
 
 func StringBuilder(event *events.Event, verboseLogMessages bool) string {
-
 	eventType := event.Type
 	var msg []byte
 	switch eventType {
@@ -189,16 +187,12 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 
 }
 
-func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitGroup*/) {
+func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 	if logStringToSend != "" {
 		var buf bytes.Buffer
 		g := gzip.NewWriter(&buf)
 		g.Write([]byte(logStringToSend))
 		g.Close()
-		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
-			logging.Info. /*Trace*/ Println("Delaying post to honor minimum post delay")
-			time.Sleep(100 * time.Millisecond)
-		}
 		request, err := http.NewRequest("POST", s.url, &buf)
 		if err != nil {
 			logging.Error.Printf("http.NewRequest() error: %v\n", err)
@@ -216,7 +210,11 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 		if s.sumoCategory != "" {
 			request.Header.Add("X-Sumo-Category", s.sumoCategory)
 		}
-
+		//checking the timer before first POST intent
+		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
+			logging.Trace.Println("Delaying Post because minimum post timer not expired")
+			time.Sleep(100 * time.Millisecond)
+		}
 		response, err := s.httpClient.Do(request)
 
 		if (err != nil) || (response.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500) {
@@ -226,7 +224,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 			statusCode := 0
 			err := Retry(func(attempt int) (bool, error) {
 				var errRetry error
-				//create again request
 				request, err := http.NewRequest("POST", s.url, &buf)
 				if err != nil {
 					logging.Error.Printf("http.NewRequest() error: %v\n", err)
@@ -241,6 +238,11 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 				}
 				if s.sumoCategory != "" {
 					request.Header.Add("X-Sumo-Category", s.sumoCategory)
+				}
+				//checking the timer before POST (retry intent)
+				for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
+					logging.Trace.Println("Delaying Post because minimum post timer not expired")
+					time.Sleep(100 * time.Millisecond)
 				}
 				response, errRetry = s.httpClient.Do(request)
 				if errRetry != nil {
@@ -277,7 +279,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 		if response != nil {
 			defer response.Body.Close()
 		}
-		//wg.Done()
 	}
 
 }

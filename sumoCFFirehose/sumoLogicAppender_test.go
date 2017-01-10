@@ -9,34 +9,51 @@ import (
 	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
 )
 
-func testAppenderStringBuilder(t *testing.T) {
+func TestAppenderStringBuilder(t *testing.T) {
 	event1 := Event{
 		Fields: map[string]interface{}{
-			"timestamp":    "1481569361828366387",
-			"message_type": "OUT",
-			"cf_app_id":    "011",
+			"deployment": "cf",
+			"ip":         "10.193.166.33",
+			"job":        "cloud_controller",
+			"job_index":  "c82feee9-2159-4b05-b669-a9929eb59017",
+			"name":       "requests.completed",
+			"origin":     "cc",
+			"unit":       "counter",
+			"value":      558108,
 		},
-		Msg: "index [01]",
+		Msg:  "",
+		Type: "ValueMetric",
 	}
 
 	event2 := Event{
 		Fields: map[string]interface{}{
-			"timestamp":    "1481569362844737993",
-			"message_type": "OUT",
-			"cf_app_id":    "022",
+			"delta":      9,
+			"deployment": "cf-redis",
+			"ip":         "10.193.166.84",
+			"job":        "dedicated-node",
+			"job_index":  "8081eca4-9e27-49cb-83ce-948e703c0939",
+			"name":       "dropsondeMarshaller.sentEnvelopes",
+			"origin":     "MetronAgent",
+			"total":      10249446,
 		},
-		Msg: "index [02]",
+		Msg:  "",
+		Type: "CounterEvent",
 	}
 
 	event3 := Event{
 		Fields: map[string]interface{}{
-			"timestamp":    "1481569363862436654",
-			"message_type": "OUT",
-			"cf_app_id":    "033",
+			"delta":      582,
+			"deployment": "cf-redis",
+			"ip":         "10.193.166.84",
+			"job":        "dedicated-node",
+			"job_index":  "23f9be01-bd83-4967-acba-69fc649f4ee6",
+			"name":       "dropsondeAgentListener.receivedByteCount",
+			"origin":     "MetronAgent",
+			"total":      639557085,
 		},
-		Msg: "index [03]",
+		Msg:  "",
+		Type: "CounterEvent",
 	}
-
 	queue := Queue{
 		Events: make([]*Event, 3),
 	}
@@ -48,22 +65,22 @@ func testAppenderStringBuilder(t *testing.T) {
 	for queue.GetCount() > 0 {
 		finalString = finalString + StringBuilder(queue.Pop(), true)
 	}
-	assert.Equal(t, finalString, "2016-12-12 16:02:41.828366387 -0300 CLST"+"\t"+"OUT"+"\t"+"index [01]"+"\n"+
-		"2016-12-12 16:02:42.844737993 -0300 CLST"+"\t"+"OUT"+"\t"+"index [02]"+"\n"+
-		"2016-12-12 16:02:43.862436654 -0300 CLST"+"\t"+"OUT"+"\t"+"index [03]"+"\n", "")
+	assert.Equal(t, finalString, "{\"Fields\":{\"deployment\":\"cf\",\"ip\":\"10.193.166.33\",\"job\":\"cloud_controller\",\"job_index\":\"c82feee9-2159-4b05-b669-a9929eb59017\",\"name\":\"requests.completed\",\"origin\":\"cc\",\"unit\":\"counter\",\"value\":558108},\"Msg\":\"\",\"Type\":\"ValueMetric\"}\n"+
+		"{\"Fields\":{\"delta\":9,\"deployment\":\"cf-redis\",\"ip\":\"10.193.166.84\",\"job\":\"dedicated-node\",\"job_index\":\"8081eca4-9e27-49cb-83ce-948e703c0939\",\"name\":\"dropsondeMarshaller.sentEnvelopes\",\"origin\":\"MetronAgent\",\"total\":10249446},\"Msg\":\"\",\"Type\":\"CounterEvent\"}\n"+
+		"{\"Fields\":{\"delta\":582,\"deployment\":\"cf-redis\",\"ip\":\"10.193.166.84\",\"job\":\"dedicated-node\",\"job_index\":\"23f9be01-bd83-4967-acba-69fc649f4ee6\",\"name\":\"dropsondeAgentListener.receivedByteCount\",\"origin\":\"MetronAgent\",\"total\":639557085},\"Msg\":\"\",\"Type\":\"CounterEvent\"}\n", "")
 }
 
-func testStringBuilderVerboseLogsFalse(t *testing.T) {
+func TestStringBuilderVerboseLogsFalse(t *testing.T) {
 	eventVerboseLogMessage := Event{
 		Fields: map[string]interface{}{
 			"message_type":    "OUT",
-			"source_instance": "0",
+			"source_instance": 0,
 			"deployment":      "cf",
 			"ip":              "10.193.166.47",
 			"job":             "diego_cell",
 			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
 			"cf_ignored_app":  "false",
-			"timestamp":       "1483629662001580713",
+			"timestamp":       int64(1483629662001580713),
 			"source_type":     "APP",
 			"origin":          "rep",
 			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
@@ -71,23 +88,23 @@ func testStringBuilderVerboseLogsFalse(t *testing.T) {
 		Msg:  "Triggering 'app usage events fetcher'",
 		Type: "LogMessage",
 	}
-	finalMessage := StringBuilder(&eventVerboseLogMessage, false)
 
-	assert.False(t, assert.Contains(t, finalMessage, "source_type", ""), "should be false")
+	finalMessage := StringBuilder(&eventVerboseLogMessage, false)
+	assert.NotContains(t, finalMessage, "source_type", "dsds")
 
 }
 
-func testStringBuilderVerboseLogsTrue(t *testing.T) {
+func TestStringBuilderVerboseLogsTrue(t *testing.T) {
 	eventVerboseLogMessage := Event{
 		Fields: map[string]interface{}{
 			"message_type":    "OUT",
-			"source_instance": "0",
+			"source_instance": 0,
 			"deployment":      "cf",
 			"ip":              "10.193.166.47",
 			"job":             "diego_cell",
 			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
 			"cf_ignored_app":  "false",
-			"timestamp":       "1483629662001580713",
+			"timestamp":       int64(1483629662001580713),
 			"source_type":     "APP",
 			"origin":          "rep",
 			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
@@ -97,6 +114,6 @@ func testStringBuilderVerboseLogsTrue(t *testing.T) {
 	}
 	finalMessage := StringBuilder(&eventVerboseLogMessage, true)
 
-	assert.True(t, assert.Contains(t, finalMessage, "source_type", ""), "should be true")
+	assert.Contains(t, finalMessage, "source_type", "dsds")
 
 }
