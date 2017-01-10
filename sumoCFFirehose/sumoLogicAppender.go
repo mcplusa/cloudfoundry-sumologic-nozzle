@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -195,10 +196,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 		g := gzip.NewWriter(&buf)
 		g.Write([]byte(logStringToSend))
 		g.Close()
-		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
-			logging.Info. /*Trace*/ Println("Delaying post to honor minimum post delay")
-			time.Sleep(100 * time.Millisecond)
-		}
 		request, err := http.NewRequest("POST", s.url, &buf)
 		if err != nil {
 			logging.Error.Printf("http.NewRequest() error: %v\n", err)
@@ -216,7 +213,12 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 		if s.sumoCategory != "" {
 			request.Header.Add("X-Sumo-Category", s.sumoCategory)
 		}
-
+		fmt.Println(time.Since(s.timerBetweenPost))
+		//checking the timer before first POST intent
+		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
+			logging.Info. /*Trace.*/ Println("Delaying post to honor minimum post delay")
+			time.Sleep(100 * time.Millisecond)
+		}
 		response, err := s.httpClient.Do(request)
 
 		if (err != nil) || (response.StatusCode != 200 && response.StatusCode != 302 && response.StatusCode < 500) {
@@ -226,7 +228,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 			statusCode := 0
 			err := Retry(func(attempt int) (bool, error) {
 				var errRetry error
-				//create again request
 				request, err := http.NewRequest("POST", s.url, &buf)
 				if err != nil {
 					logging.Error.Printf("http.NewRequest() error: %v\n", err)
@@ -242,6 +243,12 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 				if s.sumoCategory != "" {
 					request.Header.Add("X-Sumo-Category", s.sumoCategory)
 				}
+				fmt.Println(time.Since(s.timerBetweenPost))
+				//checking the timer before POST (retry intent)
+				for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
+					logging.Info. /*Trace.*/ Println("Delaying post to honor minimum post delay (retry intent)")
+					time.Sleep(100 * time.Millisecond)
+				}
 				response, errRetry = s.httpClient.Do(request)
 				if errRetry != nil {
 					logging.Error.Printf("http.Do() error: %v\n", errRetry)
@@ -255,7 +262,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 					time.Sleep(300 * time.Millisecond)
 					return attempt < 5, errRetry
 				} else if response.StatusCode == 200 {
-					logging.Trace.Println("Post of logs successful after retry...")
+					logging.Info. /*Trace.*/ Println("Post of logs successful after retry...")
 					s.timerBetweenPost = time.Now()
 					statusCode = response.StatusCode
 					return true, err
@@ -270,7 +277,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 				logging.Error.Printf("Not able to post after retry, with status code: %d", statusCode)
 			}
 		} else if response.StatusCode == 200 {
-			logging.Trace.Println("Post of logs successful")
+			logging.Info. /*Trace.*/ Println("Post of logs successful")
 			s.timerBetweenPost = time.Now()
 		}
 
