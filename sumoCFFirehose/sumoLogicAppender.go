@@ -188,6 +188,14 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 	buffer.logEventsInCurrentBuffer++
 
 }
+func ParseCustomMetadata(customMetadata string) map[string]string {
+	cMetadataArray := strings.Split(customMetadata, ",")
+	customMetadataMap := make(map[string]string)
+	for i := 0; i < len(cMetadataArray); i++ {
+		customMetadataMap[strings.Split(cMetadataArray[i], ":")[0]] = strings.Split(cMetadataArray[i], ":")[1]
+	}
+	return customMetadataMap
+}
 
 func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 	if logStringToSend != "" {
@@ -213,9 +221,9 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		}
 
 		if s.customMetadata != "" {
-			cMetadataArray := strings.Split(s.customMetadata, ",")
-			for i := 0; i < len(cMetadataArray); i++ {
-				request.Header.Add(strings.Split(cMetadataArray[i], ":")[0], strings.Split(cMetadataArray[i], ":")[1])
+			customMetadataMap := ParseCustomMetadata(s.customMetadata)
+			for key, value := range customMetadataMap {
+				request.Header.Add(key, value)
 			}
 		}
 		//checking the timer before first POST intent

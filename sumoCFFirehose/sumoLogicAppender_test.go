@@ -114,6 +114,18 @@ func TestStringBuilderVerboseLogsTrue(t *testing.T) {
 	}
 	finalMessage := StringBuilder(&eventVerboseLogMessage, true)
 
-	assert.Contains(t, finalMessage, "source_type", "dsds")
+	assert.Contains(t, finalMessage, "source_type", "")
+
+}
+func TestSendParseCustomMetadata(t *testing.T) {
+	customMetadata := "Key1:Value1,Key2:Value2,Key3:Value3"
+	mapCustomMetadata := ParseCustomMetadata(customMetadata)
+	mapExpected := map[string]string{
+		"Key1": "Value1",
+		"Key2": "Value2",
+		"Key3": "Value3",
+	}
+
+	assert.Equal(t, mapExpected, mapCustomMetadata, "")
 
 }
