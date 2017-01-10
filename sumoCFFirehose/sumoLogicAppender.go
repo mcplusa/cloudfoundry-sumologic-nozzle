@@ -262,7 +262,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 					time.Sleep(300 * time.Millisecond)
 					return attempt < 5, errRetry
 				} else if response.StatusCode == 200 {
-					logging.Info. /*Trace.*/ Println("Post of logs successful after retry...")
+					logging.Trace.Println("Post of logs successful after retry...")
 					s.timerBetweenPost = time.Now()
 					statusCode = response.StatusCode
 					return true, err
@@ -277,7 +277,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 				logging.Error.Printf("Not able to post after retry, with status code: %d", statusCode)
 			}
 		} else if response.StatusCode == 200 {
-			logging.Info. /*Trace.*/ Println("Post of logs successful")
+			logging.Trace.Println("Post of logs successful")
 			s.timerBetweenPost = time.Now()
 		}
 
