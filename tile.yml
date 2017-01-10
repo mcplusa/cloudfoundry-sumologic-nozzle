@@ -67,6 +67,11 @@ forms:
     label: Sumo Logic Host
     description: Sumo Logic Host (this will override the default in Sumo Logic)
     optional: true
+  - name: custom-metadata
+    type: string
+    label: Custom Metadata
+    description: Enter your custom metatdata and values (key1:value1,key2:value2, etc...)
+    optional: true
 
 - name: cf-config
   label: Cloud Foundry Settings
