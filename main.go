@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"runtime"
 	"time"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
@@ -39,7 +38,7 @@ var (
 )
 
 var (
-	version = "0.1"
+	version = "0.1.0"
 )
 
 func main() {
@@ -48,8 +47,6 @@ func main() {
 
 	kingpin.Version(version)
 	kingpin.Parse()
-
-	runtime.GOMAXPROCS(1)
 
 	logging.Info.Println("Set Configurations:")
 	logging.Info.Println("CF API Endpoint: t" + *apiEndpoint)
