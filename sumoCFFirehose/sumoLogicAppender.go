@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
-	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -109,7 +108,6 @@ func (s *SumoLogicAppender) Start() {
 }
 
 func StringBuilder(event *events.Event, verboseLogMessages bool) string {
-
 	eventType := event.Type
 	var msg []byte
 	switch eventType {
@@ -191,6 +189,7 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 }
 
 func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitGroup*/) {
+	println(logStringToSend)
 	if logStringToSend != "" {
 		var buf bytes.Buffer
 		g := gzip.NewWriter(&buf)
@@ -213,10 +212,9 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 		if s.sumoCategory != "" {
 			request.Header.Add("X-Sumo-Category", s.sumoCategory)
 		}
-		fmt.Println(time.Since(s.timerBetweenPost))
 		//checking the timer before first POST intent
 		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
-			logging.Info. /*Trace.*/ Println("Delaying post to honor minimum post delay")
+			logging.Info. /*Trace.*/ Println("Delaying Post because minimum post timer not expired")
 			time.Sleep(100 * time.Millisecond)
 		}
 		response, err := s.httpClient.Do(request)
@@ -243,10 +241,9 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 				if s.sumoCategory != "" {
 					request.Header.Add("X-Sumo-Category", s.sumoCategory)
 				}
-				fmt.Println(time.Since(s.timerBetweenPost))
 				//checking the timer before POST (retry intent)
 				for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
-					logging.Info. /*Trace.*/ Println("Delaying post to honor minimum post delay (retry intent)")
+					logging.Info. /*Trace.*/ Println("Delaying Post because minimum post timer not expired")
 					time.Sleep(100 * time.Millisecond)
 				}
 				response, errRetry = s.httpClient.Do(request)
