@@ -58,7 +58,6 @@ func newBuffer() SumoBuffer {
 }
 
 func (s *SumoLogicAppender) Start() {
-	//var wg sync.WaitGroup
 	s.timerBetweenPost = time.Now()
 	runtime.GOMAXPROCS(1)
 	Buffer := newBuffer()
@@ -74,7 +73,7 @@ func (s *SumoLogicAppender) Start() {
 		if time.Since(Buffer.timerIdlebuffer).Seconds() >= 10 && Buffer.logEventsInCurrentBuffer > 0 {
 			logging.Info.Println("Sending current batch of logs after timer exceeded limit")
 			//wg.Add(1)
-			go s.SendToSumo(Buffer.logStringToSend.String() /*, &wg*/)
+			go s.SendToSumo(Buffer.logStringToSend.String())
 			Buffer = newBuffer()
 			Buffer.timerIdlebuffer = time.Now()
 			continue
@@ -90,8 +89,8 @@ func (s *SumoLogicAppender) Start() {
 					s.AppendLogs(&Buffer)
 					Buffer.timerIdlebuffer = time.Now()
 				}
-				//wg.Add(1)
-				go s.SendToSumo(Buffer.logStringToSend.String() /*, &wg*/)
+
+				go s.SendToSumo(Buffer.logStringToSend.String())
 				Buffer = newBuffer()
 			} else {
 				logging.Trace.Println("Pushing Logs to Buffer: ")
@@ -102,7 +101,7 @@ func (s *SumoLogicAppender) Start() {
 				}
 			}
 		}
-		//wg.Wait()
+
 	}
 
 }
@@ -188,8 +187,7 @@ func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
 
 }
 
-func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitGroup*/) {
-	println(logStringToSend)
+func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 	if logStringToSend != "" {
 		var buf bytes.Buffer
 		g := gzip.NewWriter(&buf)
@@ -214,7 +212,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 		}
 		//checking the timer before first POST intent
 		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
-			logging.Info. /*Trace.*/ Println("Delaying Post because minimum post timer not expired")
+			logging.Trace.Println("Delaying Post because minimum post timer not expired")
 			time.Sleep(100 * time.Millisecond)
 		}
 		response, err := s.httpClient.Do(request)
@@ -243,7 +241,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 				}
 				//checking the timer before POST (retry intent)
 				for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
-					logging.Info. /*Trace.*/ Println("Delaying Post because minimum post timer not expired")
+					logging.Trace.Println("Delaying Post because minimum post timer not expired")
 					time.Sleep(100 * time.Millisecond)
 				}
 				response, errRetry = s.httpClient.Do(request)
@@ -281,7 +279,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string /*, wg *sync.WaitG
 		if response != nil {
 			defer response.Body.Close()
 		}
-		//wg.Done()
 	}
 
 }
