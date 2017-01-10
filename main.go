@@ -35,6 +35,7 @@ var (
 	sumoName             = kingpin.Flag("sumo-name", "Sumo Logic Name").Default("").OverrideDefaultFromEnvar("SUMO_NAME").String()
 	sumoHost             = kingpin.Flag("sumo-host", "Sumo Logic Host").Default("").OverrideDefaultFromEnvar("SUMO_HOST").String()
 	verboseLogMessages   = kingpin.Flag("verbose-log-messages", "Verbose Log Messages").Default("true").OverrideDefaultFromEnvar("VERBOSE_LOG_MESSAGES").Bool()
+	customMetadata       = kingpin.Flag("custom-metadata", "Custom Metadata").Default("").OverrideDefaultFromEnvar("CUSTOM_METADATA").String()
 )
 
 var (
@@ -90,7 +91,7 @@ func main() {
 
 	logging.Info.Println("Creating queue")
 	queue := eventQueue.NewQueue(make([]*events.Event, 100))
-	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 5000, &queue, *eventsBatchSize, *sumoPostMinimumDelay, *sumoCategory, *sumoName, *sumoHost, *verboseLogMessages)
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 5000, &queue, *eventsBatchSize, *sumoPostMinimumDelay, *sumoCategory, *sumoName, *sumoHost, *verboseLogMessages, *customMetadata)
 	go loggingClientSumo.Start() //multi
 
 	logging.Info.Println("Creating Events")
