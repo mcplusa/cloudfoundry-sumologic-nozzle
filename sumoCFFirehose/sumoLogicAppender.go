@@ -3,12 +3,12 @@ package sumoCFFirehose
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"runtime"
+	"strings"
 	"time"
-
-	"encoding/json"
 
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
 	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
@@ -27,6 +27,7 @@ type SumoLogicAppender struct {
 	sumoName             string
 	sumoHost             string
 	verboseLogMessages   bool
+	customMetadata       string
 }
 
 type SumoBuffer struct {
@@ -35,7 +36,7 @@ type SumoBuffer struct {
 	timerIdlebuffer          time.Time
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoHost string, verboseLogMessages bool) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoHost string, verboseLogMessages bool, customMetadata string) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:                  urlValue,
 		connectionTimeout:    connectionTimeoutValue,
@@ -47,6 +48,7 @@ func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQue
 		sumoName:             sumoName,
 		sumoHost:             sumoHost,
 		verboseLogMessages:   verboseLogMessages,
+		customMetadata:       customMetadata,
 	}
 }
 
@@ -198,7 +200,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 			logging.Error.Printf("http.NewRequest() error: %v\n", err)
 			return
 		}
-
 		request.Header.Add("Content-Encoding", "gzip")
 
 		if s.sumoName != "" {
@@ -209,6 +210,13 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		}
 		if s.sumoCategory != "" {
 			request.Header.Add("X-Sumo-Category", s.sumoCategory)
+		}
+
+		if s.customMetadata != "" {
+			cMetadataArray := strings.Split(s.customMetadata, ",")
+			for i := 0; i < len(cMetadataArray); i++ {
+				request.Header.Add(strings.Split(cMetadataArray[i], ":")[0], strings.Split(cMetadataArray[i], ":")[1])
+			}
 		}
 		//checking the timer before first POST intent
 		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
