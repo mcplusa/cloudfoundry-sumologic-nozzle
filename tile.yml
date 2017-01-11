@@ -2,9 +2,9 @@
 # The high-level description of your tile.
 # Replace these properties with real values.
 #
-name: firehose-to-sumologic # By convention lowercase with dashes
+name: sumo-logic-nozzle # By convention lowercase with dashes
 icon_file: resources/sumo_128x128-B.png
-label: Sumo Logic Firehose Nozzle for PCF
+label: Sumo Logic Nozzle for PCF
 description: Forward firehose logs to Sumo Logic
 
 # Global defaults (all optional)
@@ -31,7 +31,7 @@ packages:
   manifest:
     # any options that you would normally specify in a cf manifest.yml, including</i>
     buildpack: https://github.com/cloudfoundry/go-buildpack.git
-    command: sumo-logic-nozzle
+    command: firehose-to-sumologic
     path: sumo-logic-nozzle.zip
   health_check: none
   needs_cf_credentials: true
@@ -70,13 +70,29 @@ forms:
   - name: custom-metadata
     type: string
     label: Custom Metadata
-    description: Enter your custom metatdata and values (key1:value1,key2:value2, etc...)
+    description: Enter your custom metadata and values (key1:value1,key2:value2, etc...)
     optional: true
+  - name: include-only-matching-filter
+    type: string
+    label: Include Only Matching Filter
+    description: Enter your Include Only Filter as key1:value1,key2:value2, etc...
+    optional: true
+  - name: exclude-always-matching-filter
+    type: string
+    label: Exclude Always Filter
+    description: Enter your Exclude Always Filter as key1:value1,key2:value2, etc...
+    optional: true
+
+
 
 - name: cf-config
   label: Cloud Foundry Settings
   description: Cloud Foundry Settings details
   properties:
+  - name: api-endpoint
+    type: string
+    label: Cloud Foundry API Endpoint
+    description: API endpoint for CF
   - name: cloudfoundry-user
     type: string
     label: Cloud Foundry User
@@ -85,10 +101,6 @@ forms:
     type: secret
     label: Cloud Foundry Password
     description: Password for API user
-  - name: api-endpoint
-    type: string
-    label: Cloud Foundry API Endpoint
-    description: API endpoint for CF
   - name: log-events-batch-size
     type: string
     label: Log Events Batch Size
@@ -99,6 +111,11 @@ forms:
     label: Comma separated list of events you would like (Default is "LogMessage")
     default: LogMessage
     description: Valid options are Error, ContainerMetric, HttpStart, HttpStop, HttpStartStop, LogMessage, ValueMetric, CounterEvent
+  - name: verbose-log-messages
+    type: boolean
+    label: Verbose in 'LogMessage' event
+    default: true
+    description: If is not checked, it will send only the LogMessage and the App id
   - name: nozzle-polling-period
     type: string
     label: Nozzle Polling Period
@@ -110,8 +127,3 @@ forms:
     default: true
     description: Handle if the Nozzle logs will be ignored and not send to Sumo Logic
     configurable: false
-  - name: verbose-log-messages
-    type: boolean
-    label: Verbose in LogMessage event
-    default: true
-    description: If is false, it will send only the LogMessage and the App id

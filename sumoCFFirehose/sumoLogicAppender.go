@@ -15,18 +15,20 @@ import (
 )
 
 type SumoLogicAppender struct {
-	url                  string
-	connectionTimeout    int //10000
-	httpClient           http.Client
-	nozzleQueue          *eventQueue.Queue
-	eventsBatchSize      int
-	sumoPostMinimumDelay time.Duration
-	timerBetweenPost     time.Time
-	sumoCategory         string
-	sumoName             string
-	sumoHost             string
-	verboseLogMessages   bool
-	customMetadata       string
+	url                         string
+	connectionTimeout           int //10000
+	httpClient                  http.Client
+	nozzleQueue                 *eventQueue.Queue
+	eventsBatchSize             int
+	sumoPostMinimumDelay        time.Duration
+	timerBetweenPost            time.Time
+	sumoCategory                string
+	sumoName                    string
+	sumoHost                    string
+	verboseLogMessages          bool
+	customMetadata              string
+	includeOnlyMatchingFilter   string
+	excludeAlwaysMatchingFilter string
 }
 
 type SumoBuffer struct {
@@ -35,19 +37,21 @@ type SumoBuffer struct {
 	timerIdlebuffer          time.Time
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoHost string, verboseLogMessages bool, customMetadata string) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoHost string, verboseLogMessages bool, customMetadata string, includeOnlyMatchingFilter string, excludeAlwaysMatchingFilter string) *SumoLogicAppender {
 	return &SumoLogicAppender{
-		url:                  urlValue,
-		connectionTimeout:    connectionTimeoutValue,
-		httpClient:           http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
-		nozzleQueue:          nozzleQueue,
-		eventsBatchSize:      eventsBatchSize,
-		sumoPostMinimumDelay: sumoPostMinimumDelay,
-		sumoCategory:         sumoCategory,
-		sumoName:             sumoName,
-		sumoHost:             sumoHost,
-		verboseLogMessages:   verboseLogMessages,
-		customMetadata:       customMetadata,
+		url:                         urlValue,
+		connectionTimeout:           connectionTimeoutValue,
+		httpClient:                  http.Client{Timeout: time.Duration(connectionTimeoutValue * int(time.Millisecond))},
+		nozzleQueue:                 nozzleQueue,
+		eventsBatchSize:             eventsBatchSize,
+		sumoPostMinimumDelay:        sumoPostMinimumDelay,
+		sumoCategory:                sumoCategory,
+		sumoName:                    sumoName,
+		sumoHost:                    sumoHost,
+		verboseLogMessages:          verboseLogMessages,
+		customMetadata:              customMetadata,
+		includeOnlyMatchingFilter:   includeOnlyMatchingFilter,
+		excludeAlwaysMatchingFilter: excludeAlwaysMatchingFilter,
 	}
 }
 
@@ -105,8 +109,44 @@ func (s *SumoLogicAppender) Start() {
 	}
 
 }
+func WantedEvent(event string, includeOnlyMatchingFilter string, excludeAlwaysMatchingFilter string) bool {
+	if includeOnlyMatchingFilter != "" && excludeAlwaysMatchingFilter != "" {
+		subsliceInclude := ParseCustomInput(includeOnlyMatchingFilter)
+		subsliceExclude := ParseCustomInput(excludeAlwaysMatchingFilter)
+		for key, value := range subsliceInclude {
+			if strings.Contains(event, "\""+key+"\":\""+value+"\"") {
+				return true
+			}
+		}
+		for key, value := range subsliceExclude {
+			if strings.Contains(event, "\""+key+"\":\""+value+"\"") {
+				return false
+			}
+		}
+		return false
+	} else if includeOnlyMatchingFilter != "" {
+		subslice := ParseCustomInput(includeOnlyMatchingFilter)
+		for key, value := range subslice {
+			if strings.Contains(event, "\""+key+"\":\""+value+"\"") {
+				return true
+			}
+		}
+		return false
 
-func StringBuilder(event *events.Event, verboseLogMessages bool) string {
+	} else if excludeAlwaysMatchingFilter != "" {
+		subslice := ParseCustomInput(excludeAlwaysMatchingFilter)
+		for key, value := range subslice {
+			if strings.Contains(event, "\""+key+"\":\""+value+"\"") {
+				return false
+			}
+		}
+		return true
+	}
+	return true
+
+}
+
+func StringBuilder(event *events.Event, verboseLogMessages bool, includeOnlyMatchingFilter string, excludeAlwaysMatchingFilter string) string {
 	eventType := event.Type
 	var msg []byte
 	switch eventType {
@@ -176,23 +216,29 @@ func StringBuilder(event *events.Event, verboseLogMessages bool) string {
 			msg = message
 		}
 	}
+
 	buf := new(bytes.Buffer)
 	buf.Write(msg)
-	return buf.String() + "\n"
+	if WantedEvent(buf.String(), includeOnlyMatchingFilter, excludeAlwaysMatchingFilter) {
+		return buf.String() + "\n"
+	} else {
+		return ""
+	}
+
 }
 
 func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
-	buffer.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop(), s.verboseLogMessages)))
+	buffer.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop(), s.verboseLogMessages, s.includeOnlyMatchingFilter, s.excludeAlwaysMatchingFilter)))
 	buffer.logEventsInCurrentBuffer++
 
 }
-func ParseCustomMetadata(customMetadata string) map[string]string {
-	cMetadataArray := strings.Split(customMetadata, ",")
-	customMetadataMap := make(map[string]string)
-	for i := 0; i < len(cMetadataArray); i++ {
-		customMetadataMap[strings.Split(cMetadataArray[i], ":")[0]] = strings.Split(cMetadataArray[i], ":")[1]
+func ParseCustomInput(customInput string) map[string]string {
+	cInputArray := strings.Split(customInput, ",")
+	customInputMap := make(map[string]string)
+	for i := 0; i < len(cInputArray); i++ {
+		customInputMap[strings.Split(cInputArray[i], ":")[0]] = strings.Split(cInputArray[i], ":")[1]
 	}
-	return customMetadataMap
+	return customInputMap
 }
 
 func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
@@ -219,7 +265,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		}
 
 		if s.customMetadata != "" {
-			customMetadataMap := ParseCustomMetadata(s.customMetadata)
+			customMetadataMap := ParseCustomInput(s.customMetadata)
 			for key, value := range customMetadataMap {
 				request.Header.Add(key, value)
 			}
@@ -252,6 +298,12 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 				}
 				if s.sumoCategory != "" {
 					request.Header.Add("X-Sumo-Category", s.sumoCategory)
+				}
+				if s.customMetadata != "" {
+					customMetadataMap := ParseCustomInput(s.customMetadata)
+					for key, value := range customMetadataMap {
+						request.Header.Add(key, value)
+					}
 				}
 				//checking the timer before POST (retry intent)
 				for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
