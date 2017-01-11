@@ -8,12 +8,12 @@ image_resource:
 
 
 inputs:
-  - name: firehose-to-sumologic-ci
+  - name: cloudfoundry-sumologic-nozzle-ci
     path: gopath/src/github.com/mcplusa/cloudfoundry-sumologic-nozzle/
   - name: version
 
 outputs:
-  - name: firehose-to-sumologic-ci-build
+  - name: cloudfoundry-sumologic-nozzle-ci-build
 
 run:
   path: gopath/src/github.com/mcplusa/cloudfoundry-sumologic-nozzle/ci/build-all/build-all

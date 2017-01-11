@@ -9,4 +9,4 @@ cd $GOPATH/src/github.com/mcplusa/cloudfoundry-sumologic-nozzle
 make clean
 make compile
 
-mv dist ${ROOT_DIR}/firehose-to-sumologic-ci-build/
+mv dist ${ROOT_DIR}/cloudfoundry-sumologic-nozzle-ci-build/
