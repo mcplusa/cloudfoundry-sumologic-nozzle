@@ -1,5 +1,5 @@
 {
-	"ImportPath": "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic",
+	"ImportPath": "github.com/mcplusa/cloudfoundry-sumologic-nozzle",
 	"GoVersion": "go1.7",
 	"GodepVersion": "v75",
 	"Deps": [

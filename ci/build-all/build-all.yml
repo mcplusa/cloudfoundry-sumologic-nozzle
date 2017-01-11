@@ -9,13 +9,13 @@ image_resource:
 
 inputs:
   - name: firehose-to-sumologic-ci
-    path: gopath/src/bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/
+    path: gopath/src/github.com/mcplusa/cloudfoundry-sumologic-nozzle/
   - name: version
 
 outputs:
   - name: firehose-to-sumologic-ci-build
 
 run:
-  path: gopath/src/bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/ci/build-all/build-all
+  path: gopath/src/github.com/mcplusa/cloudfoundry-sumologic-nozzle/ci/build-all/build-all
 params:
   VERSION_APP:

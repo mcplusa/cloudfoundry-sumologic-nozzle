@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
-	fevents "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/caching"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/eventQueue"
+	fevents "github.com/mcplusa/cloudfoundry-sumologic-nozzle/events"
 	"github.com/cloudfoundry/sonde-go/events"
 )
 

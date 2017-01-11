@@ -4,7 +4,7 @@ export ROOT_DIR=$PWD
 export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
 export BUILD_NUMBER=`[ ${VERSION_APP} ] && cat ${VERSION_APP} || echo "0.0.0"`
-cd $GOPATH/src/bitbucket.org/mcplusa-ondemand/firehose-to-sumologic
+cd $GOPATH/src/github.com/mcplusa/cloudfoundry-sumologic-nozzle
 
 make clean
 make compile

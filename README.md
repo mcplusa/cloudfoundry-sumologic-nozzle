@@ -52,30 +52,30 @@ If everything goes right, you should see in your terminal the _Nozzle's Logs_ an
 
 ### Filtering Option
 
-asked. It works this way:
-* case 1:
-Include-Only filter="" (Empty)
-Exclude-Always filter="" (Empty)
-in this case, all the events will be sent to Sumo Logic
+It works this way:
+* **Case 1**:
+**Include-Only filter**="" (_Empty_)
+**Exclude-Always filter**="" (_Empty_)
+In this case, _**all**_ the events will be sent to Sumo Logic
 
-* case 2:
-Include-Only filter="" (Empty)
-Exclude-Always filter= "source_type:other,origin:rep",
-in this case, all the events that contains a source-type:other field OR an origin:rep field will be not sent to Sumo Logic
+* **Case 2**:
+**Include-Only filter**="" (Empty)
+**Exclude-Always filter**= source_type:other,origin:rep
+in this case, all the events that contains a _**source-type:other**_ field OR an _**origin:rep**_ field will be not sent to Sumo Logic
 
-* case 3:
-Include-Only filter="job:diego_cell,source_type:other"
-Exclude-Always filter="" (Empty)
-in this case, Only the events that contains a job:diego-cell field OR a source-type:other field will be sent to Sumo Logic
+* **Case 3**:
+**Include-Only filter**=job:diego_cell,source_type:other
+**Exclude-Always filter**="" (Empty)
+in this case, Only the events that contains a _**job:diego-cell**_ field OR a _**source-type:other**_ field will be sent to Sumo Logic
 
-* case 4:
-Include-Only filter="job:diego_cell,source_type:other"
-Exclude-Always filter="source_type:other,origin:rep"
+* **Case 4**:
+**Include-Only filter**=job:diego_cell,source_type:other
+**Exclude-Always filter**=source_type:other,origin:rep
+In this case, all the events that contains a _**job:diego-cell**_ field OR a _**source-type:other**_ field will be sent to Sumo Logic
+**AND also**
+All the events that contains a _**source-type:other**_ field OR an _**origin:rep**_ field will be not sent to Sumo Logic
 
-in this case, all the events that contains a job:diego-cell field OR a source-type:other field will be sent to Sumo Logic
-AND also
-all the events that contains a source-type:other field OR an origin:rep field will be not sent to Sumo Logic
-if an event share both filters (contains a Include-Only filter field and a Exclude-Always filter field), Only the *Include-Only filter will be considered*
+If an event **share both filters** (contains a _Include-Only filter_ field and a _Exclude-Always_ filter field), Only the _**Include-Only**_ filter will be considered.
 
 The correct way of using those flags will be something like this:
 

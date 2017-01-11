@@ -6,14 +6,14 @@ import (
 	"os"
 	"time"
 
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/firehoseclient"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
 	"github.com/cloudfoundry-community/go-cfclient"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/caching"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/eventQueue"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/eventRouting"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/events"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/firehoseclient"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/logging"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/sumoCFFirehose"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 

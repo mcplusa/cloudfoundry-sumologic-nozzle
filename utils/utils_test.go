@@ -1,7 +1,7 @@
 package utils_test
 
 import (
-	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/utils"
+	. "github.com/mcplusa/cloudfoundry-sumologic-nozzle/utils"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"

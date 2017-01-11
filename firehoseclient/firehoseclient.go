@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"time"
 
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/eventRouting"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
