@@ -1,1 +1,1 @@
-web: firehose-to-sumologic
+web: cloudfoundry-sumologic-nozzle

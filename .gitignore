@@ -1,7 +1,6 @@
 product/
 release/
 event.db
-firehose-to-sumologic.zip
 tile-history.yml
 sumo-logic-nozzle.zip
 

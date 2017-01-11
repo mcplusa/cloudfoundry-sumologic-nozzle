@@ -1,6 +1,6 @@
 ---
 groups:
-  - name: firehose-to-sumologic
+  - name: cloudfoundry-sumologic-nozzle
     jobs:
     - unit-testing
     - downstream-master
@@ -24,37 +24,37 @@ jobs:
   public: true
   serial: true
   plan:
-   - get: firehose-to-sumologic-ci
-     resource: firehose-to-sumologic-develop
+   - get: cloudfoundry-sumologic-nozzle-ci
+     resource: cloudfoundry-sumologic-nozzle-develop
      trigger: true
    - task: unit-testing
-     file: firehose-to-sumologic-ci/ci/unit-testing/unit-testing.yml
+     file: cloudfoundry-sumologic-nozzle-ci/ci/unit-testing/unit-testing.yml
 
 
 - name: unit-testing-master
   public: true
   serial: true
   plan:
-  - get: firehose-to-sumologic-ci
-    resource: firehose-to-sumologic-master
+  - get: cloudfoundry-sumologic-nozzle-ci
+    resource: cloudfoundry-sumologic-nozzle-master
     trigger: true
   - task: unit-testing
-    file: firehose-to-sumologic-ci/ci/unit-testing/unit-testing.yml
+    file: cloudfoundry-sumologic-nozzle-ci/ci/unit-testing/unit-testing.yml
 
 
 - name: tag-master
   public: true
   serial: true
   plan:
-  - get: firehose-to-sumologic-ci
-    resource: firehose-to-sumologic-master
+  - get: cloudfoundry-sumologic-nozzle-ci
+    resource: cloudfoundry-sumologic-nozzle-master
     passed: [unit-testing-master]
   - put: version
     params: {bump: minor}
-  - put: firehose-to-sumologic-master
+  - put: cloudfoundry-sumologic-nozzle-master
     params:
       only_tag: true
-      repository: firehose-to-sumologic-ci
+      repository: cloudfoundry-sumologic-nozzle-ci
       tag: version/number
 
 
@@ -62,13 +62,13 @@ jobs:
   public: true
   serial: true
   plan:
-  - get: firehose-to-sumologic-ci
-    resource: firehose-to-sumologic-master
+  - get: cloudfoundry-sumologic-nozzle-ci
+    resource: cloudfoundry-sumologic-nozzle-master
     passed: [tag-master]
     trigger: true
   - get: version
   - task: build-binary
-    file: firehose-to-sumologic-ci/ci/build-all/build-all.yml
+    file: cloudfoundry-sumologic-nozzle-ci/ci/build-all/build-all.yml
     params:
       VERSION_APP: version/number
   - put: gh-release
@@ -76,7 +76,7 @@ jobs:
       name: version/number
       tag: version/number
       globs:
-      - firehose-to-sumologic-ci-build/dist/*/*/*
+      - cloudfoundry-sumologic-nozzle-ci-build/dist/*/*/*
 
 
 
@@ -86,16 +86,16 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: firehose-to-sumologic-ci
-      resource: firehose-to-sumologic-develop
+    - get: cloudfoundry-sumologic-nozzle-ci
+      resource: cloudfoundry-sumologic-nozzle-develop
     - get: release-repo-master
       resource: firehouse-to-sumologic-master
       trigger: true
       passed: [tag-master]
     - get: release-repo
-      resource: firehose-to-sumologic-merge-target
+      resource: cloudfoundry-sumologic-nozzle-merge-target
   - task: merge-master-to-develop
-    file: firehose-to-sumologic-ci/ci/merge-master-to-develop/merge-master-to-develop.yml
+    file: cloudfoundry-sumologic-nozzle-ci/ci/merge-master-to-develop/merge-master-to-develop.yml
     params:
       GIT_USERNAME: {{github-username}}
       GIT_EMAIL:  {{github-email}}
@@ -104,17 +104,17 @@ jobs:
 
 
 resources:
-- name: firehose-to-sumologic-merge-target
+- name: cloudfoundry-sumologic-nozzle-merge-target
   type: git
   source:
     branch: develop
     private_key: {{private-key-github-concourse}}
-    uri: git@github.com:cloudfoundry-community/firehose-to-sumologic.git
+    uri: git@github.com:cloudfoundry-community/cloudfoundry-sumologic-nozzle.git
 
-- name: firehose-to-sumologic-develop
+- name: cloudfoundry-sumologic-nozzle-develop
   type: git
   source:
-    uri: git@github.com:cloudfoundry-community/firehose-to-sumologic.git
+    uri: git@github.com:cloudfoundry-community/cloudfoundry-sumologic-nozzle.git
     branch: develop
     private_key: {{private-key-github-concourse}}
 
@@ -131,14 +131,14 @@ resources:
   type: github-release
   source:
     user: cloudfoundry-community
-    repository: firehose-to-sumologic
+    repository: cloudfoundry-sumologic-nozzle
     access_token: {{github-access-token}}
 
 - name: version
   type: semver-gwenn
   source:
     driver: git
-    uri: git@github.com:cloudfoundry-community/firehose-to-sumologic.git
+    uri: git@github.com:cloudfoundry-community/cloudfoundry-sumologic-nozzle.git
     branch: version
     file: version
     private_key: {{private-key-github-concourse}}

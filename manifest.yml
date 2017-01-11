@@ -1,7 +1,7 @@
 applications:
-- name: firehose-to-sumologic
+- name: cloudfoundry-sumologic-nozzle
 env:
-  FIREHOSE_SUBSCRIPTION_ID: firehose-to-sumologic
+  FIREHOSE_SUBSCRIPTION_ID: cloudfoundry-sumologic-nozzle
   LOG_EVENTS_BATCHSIZE: 200
   SUMO_POST_MINIMUM_DELAY: 200ms
   F2S_DISABLE_LOGGING: true
