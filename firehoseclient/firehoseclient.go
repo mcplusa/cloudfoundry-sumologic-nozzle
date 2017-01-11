@@ -2,13 +2,14 @@ package firehoseclient
 
 import (
 	"crypto/tls"
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"time"
+
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
-	"time"
 )
 
 type FirehoseNozzle struct {
@@ -42,7 +43,9 @@ func NewFirehoseNozzle(cfClient *cfclient.Client, eventRouting *eventRouting.Eve
 }
 
 func (f *FirehoseNozzle) Start() error {
+	logging.Info.Printf("Started the Nozzle... \n")
 	f.consumeFirehose()
+	logging.Info.Printf("consume the firehose... \n")
 	err := f.routeEvent()
 	return err
 }
@@ -74,22 +77,22 @@ func (f *FirehoseNozzle) handleError(err error) {
 
 	switch {
 	case websocket.IsCloseError(err, websocket.CloseNormalClosure):
-		logging.LogError("Normal Websocket Closure", err)
+		//logging.LogError("Normal Websocket Closure", err)
 	case websocket.IsCloseError(err, websocket.ClosePolicyViolation):
-		logging.LogError("Error while reading from the firehose", err)
-		logging.LogError("Disconnected because nozzle couldn't keep up. Please try scaling up the nozzle.", nil)
+		//logging.LogError("Error while reading from the firehose", err)
+		//logging.LogError("Disconnected because nozzle couldn't keep up. Please try scaling up the nozzle.", nil)
 
 	default:
-		logging.LogError("Error while reading from the firehose", err)
+		//logging.LogError("Error while reading from the firehose", err)
 	}
 
-	logging.LogError("Closing connection with traffic controller due to error", err)
+	//logging.LogError("Closing connection with traffic controller due to error", err)
 	f.consumer.Close()
 }
 
 func (f *FirehoseNozzle) handleMessage(envelope *events.Envelope) {
 	if envelope.GetEventType() == events.Envelope_CounterEvent && envelope.CounterEvent.GetName() == "TruncatingBuffer.DroppedMessages" && envelope.GetOrigin() == "doppler" {
-		logging.LogStd("We've intercepted an upstream message which indicates that the nozzle or the TrafficController is not keeping up. Please try scaling up the nozzle.", true)
+		//logging.LogStd("We've intercepted an upstream message which indicates that the nozzle or the TrafficController is not keeping up. Please try scaling up the nozzle.", true)
 	}
 }
 

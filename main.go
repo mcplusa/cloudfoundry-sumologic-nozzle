@@ -2,144 +2,134 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"io/ioutil"
 	"os"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	"github.com/cloudfoundry-community/firehose-to-syslog/eventRouting"
-	"github.com/cloudfoundry-community/firehose-to-syslog/firehoseclient"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
+	"time"
+
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventRouting"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/firehoseclient"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/sumoCFFirehose"
 	"github.com/cloudfoundry-community/go-cfclient"
-	"github.com/pkg/profile"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	debug              = kingpin.Flag("debug", "Enable debug mode. This disables forwarding to syslog").Default("false").OverrideDefaultFromEnvar("DEBUG").Bool()
-	apiEndpoint        = "https://api.bosh-lite.com" //kingpin.Flag("api-endpoint", "Api endpoint address. For bosh-lite installation of CF: https://api.10.244.0.34.xip.io").OverrideDefaultFromEnvar("API_ENDPOINT").Required().String()
-	dopplerEndpoint    = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
-	syslogServer       = "192.168.33.10:514"//kingpin.Flag("syslog-server", "Syslog server.").OverrideDefaultFromEnvar("SYSLOG_ENDPOINT").String()
-	syslogProtocol     = "udp"//kingpin.Flag("syslog-protocol", "Syslog protocol (tcp/udp).").Default("tcp").OverrideDefaultFromEnvar("SYSLOG_PROTOCOL").String()
-	subscriptionId     = kingpin.Flag("subscription-id", "Id for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
-	user               = kingpin.Flag("user", "Admin user.").Default("admin").OverrideDefaultFromEnvar("FIREHOSE_USER").String()
-	password           = kingpin.Flag("password", "Admin password.").Default("admin").OverrideDefaultFromEnvar("FIREHOSE_PASSWORD").String()
-	skipSSLValidation  = kingpin.Flag("skip-ssl-validation", "Please don't").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
-	keepAlive          = kingpin.Flag("fh-keep-alive", "Keep Alive duration for the firehose consumer").Default("25s").OverrideDefaultFromEnvar("FH_KEEP_ALIVE").Duration()
-	logEventTotals     = kingpin.Flag("log-event-totals", "Logs the counters for all selected events since nozzle was last started.").Default("false").OverrideDefaultFromEnvar("LOG_EVENT_TOTALS").Bool()
-	logEventTotalsTime = kingpin.Flag("log-event-totals-time", "How frequently the event totals are calculated (in sec).").Default("30s").OverrideDefaultFromEnvar("LOG_EVENT_TOTALS_TIME").Duration()
-	wantedEvents       = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
-	boltDatabasePath   = kingpin.Flag("boltdb-path", "Bolt Database path ").Default("my.db").OverrideDefaultFromEnvar("BOLTDB_PATH").String()
-	tickerTime         = kingpin.Flag("cc-pull-time", "CloudController Polling time in sec").Default("60s").OverrideDefaultFromEnvar("CF_PULL_TIME").Duration()
-	extraFields        = kingpin.Flag("extra-fields", "Extra fields you want to annotate your events with, example: '--extra-fields=env:dev,something:other ").Default("").OverrideDefaultFromEnvar("EXTRA_FIELDS").String()
-	modeProf           = kingpin.Flag("mode-prof", "Enable profiling mode, one of [cpu, mem, block]").Default("").OverrideDefaultFromEnvar("MODE_PROF").String()
-	pathProf           = kingpin.Flag("path-prof", "Set the Path to write profiling file").Default("").OverrideDefaultFromEnvar("PATH_PROF").String()
-	logFormatterType   = kingpin.Flag("log-formatter-type", "Log formatter type to use. Valid options are text, json. If none provided, defaults to json.").Envar("LOG_FORMATTER_TYPE").String()
+	apiEndpoint  = kingpin.Flag("api-endpoint", "CF API Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String()
+	sumoEndpoint = kingpin.Flag("sumo-endpoint", "Sumo Logic Endpoint").OverrideDefaultFromEnvar("SUMO_ENDPOINT").String()
+	//dopplerEndpoint      = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
+	subscriptionId              = kingpin.Flag("subscription-id", "Cloud Foundry ID for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
+	user                        = kingpin.Flag("cloudfoundry-user", "Cloud Foundry User").OverrideDefaultFromEnvar("CLOUDFOUNDRY_USER").String()             //user created in CF, authorized to connect the firehose
+	password                    = kingpin.Flag("cloudfoundry-password", "Cloud Foundry Password").OverrideDefaultFromEnvar("CLOUDFOUNDRY_PASSWORD").String() // password created along with the firehose_user                                                                                                           //kingpin.Flag("skip-ssl-validation", "Please don't").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
+	keepAlive, errK             = time.ParseDuration("25s")                                                                                                  //default Error, ContainerMetric, HttpStart, HttpStop, HttpStartStop, LogMessage, ValueMetric, CounterEvent
+	wantedEvents                = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
+	boltDatabasePath            = "event.db"
+	tickerTime                  = kingpin.Flag("nozzle-polling-period", "Nozzle Polling Period").Default("15s").OverrideDefaultFromEnvar("NOZZLE_POLLING_PERIOD").Duration()
+	eventsBatchSize             = kingpin.Flag("log-events-batch-size", "Log Events Batch Size to send to Sumo").Default("200").OverrideDefaultFromEnvar("LOG_EVENTS_BATCH_SIZE").Int()
+	sumoPostMinimumDelay        = kingpin.Flag("sumo-post-minimum-delay", "Sumo Logic HTTP Post Minimum Delay").Default("200ms").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Duration()
+	sumoCategory                = kingpin.Flag("sumo-category", "Sumo Logic Category").Default("").OverrideDefaultFromEnvar("SUMO_CATEGORY").String()
+	sumoName                    = kingpin.Flag("sumo-name", "Sumo Logic Name").Default("").OverrideDefaultFromEnvar("SUMO_NAME").String()
+	sumoHost                    = kingpin.Flag("sumo-host", "Sumo Logic Host").Default("").OverrideDefaultFromEnvar("SUMO_HOST").String()
+	verboseLogMessages          = kingpin.Flag("verbose-log-messages", "Allow Verbose Log Messages").Default("false").OverrideDefaultFromEnvar("VERBOSE_LOG_MESSAGES").Bool()
+	customMetadata              = kingpin.Flag("custom-metadata", "Use this flag for addingCustom Metadata (key1:value1,key2:value2, etc...)").Default("").OverrideDefaultFromEnvar("CUSTOM_METADATA").String()
+	includeOnlyMatchingFilter   = kingpin.Flag("include-only-matching-filter", "Adds an 'Include only' filter to Events content (key1:value1,key2:value2, etc...)").Default("").OverrideDefaultFromEnvar("INCLUDE_ONLY_MATCHING_FILTER").String()
+	excludeAlwaysMatchingFilter = kingpin.Flag("exclude-always-matching-filter", "Adds an 'Exclude always' filter to Events content (key1:value1,key2:value2, etc...)").Default("").OverrideDefaultFromEnvar("EXCLUDE_ALWAYS_MATCHING_FILTER").String()
 )
 
 var (
-	version = "0.0.0"
+	version = "0.1.0"
 )
 
 func main() {
+	//logging init
+	logging.Init(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
+
 	kingpin.Version(version)
 	kingpin.Parse()
 
-	//Setup Logging
-	loggingClient := logging.NewLogging(syslogServer, syslogProtocol, *logFormatterType, *debug)
-	//loggingClient, err := syslog.Dial(syslogProtocol, syslogServer, syslog.LOG_ERR, "demotag") 
-         //defer loggingClient.Close()
-         //if err != nil {
-         //        log.Fatal("error")
-         //}
-	logging.LogStd(fmt.Sprintf("Starting firehose-to-syslog %s ", version), true)
-
-	if *modeProf != "" {
-		switch *modeProf {
-		case "cpu":
-			defer profile.Start(profile.CPUProfile, profile.ProfilePath(*pathProf)).Stop()
-		case "mem":
-			defer profile.Start(profile.MemProfile, profile.ProfilePath(*pathProf)).Stop()
-		case "block":
-			defer profile.Start(profile.BlockProfile, profile.ProfilePath(*pathProf)).Stop()
-		default:
-			// do nothing
-		}
+	logging.Info.Println("Set Configurations:")
+	logging.Info.Println("CF API Endpoint: t" + *apiEndpoint)
+	logging.Info.Println("Sumo Logic Endpoint: " + *sumoEndpoint)
+	//logging.Info.Println("Cloud foundry Doppler Endpoint: " + *dopplerEndpoint) //TODO
+	logging.Info.Println("Cloud Foundry Nozzle Subscription ID: " + *subscriptionId)
+	logging.Info.Println("Cloud Foundry User: " + *user)
+	logging.Info.Println("Events Selected: " + *wantedEvents)
+	logging.Info.Printf("Nozzle Polling Period: %v\n", *tickerTime)
+	logging.Info.Printf("Log Events Batch Size: [%d]\n", *eventsBatchSize)
+	logging.Info.Printf("Sumo Logic HTTP Post Minimum Delay: %v\n", *sumoPostMinimumDelay)
+	if *sumoName != "" {
+		logging.Info.Println("Sumo Logic Name: " + *sumoName)
 	}
+	if *sumoHost != "" {
+		logging.Info.Println("Sumo Logic Host: " + *sumoHost)
+	}
+	if *sumoCategory != "" {
+		logging.Info.Println("Sumo Logic Category: " + *sumoCategory)
+	}
+	logging.Info.Printf("Verbose Log Messages: %v\n", *verboseLogMessages)
+	logging.Info.Println("Starting Sumo Logic Nozzle " + version)
 
 	c := cfclient.Config{
-		ApiAddress:        apiEndpoint, //removed the *
+		ApiAddress:        *apiEndpoint,
 		Username:          *user,
 		Password:          *password,
-		SkipSslValidation: *skipSSLValidation,
+		SkipSslValidation: true,
 	}
 	cfClient, _ := cfclient.NewClient(&c)
-
-	if len(*dopplerEndpoint) > 0 {
-		cfClient.Endpoint.DopplerEndpoint = *dopplerEndpoint
-	}
-
-	logging.LogStd(fmt.Sprintf("Login with '%s' user", *user), true)
-  	logging.LogStd(fmt.Sprintf("using '%s' as user", c.Username), true)
-  	logging.LogStd(fmt.Sprintf("using '%s' as password", *password), true)
-
-	logging.LogStd(fmt.Sprintf("Using %s as doppler endpoint", cfClient.Endpoint.DopplerEndpoint), true)
 
 	//Creating Caching
 	var cachingClient caching.Caching
 	if caching.IsNeeded(*wantedEvents) {
-		cachingClient = caching.NewCachingBolt(cfClient, *boltDatabasePath)
+		cachingClient = caching.NewCachingBolt(cfClient, boltDatabasePath)
 	} else {
 		cachingClient = caching.NewCachingEmpty()
 	}
-	//Creating Events
-	events := eventRouting.NewEventRouting(cachingClient, loggingClient)
+
+	logging.Info.Println("Creating queue")
+	queue := eventQueue.NewQueue(make([]*events.Event, 100))
+	loggingClientSumo := sumoCFFirehose.NewSumoLogicAppender(*sumoEndpoint, 5000, &queue, *eventsBatchSize, *sumoPostMinimumDelay, *sumoCategory, *sumoName, *sumoHost, *verboseLogMessages, *customMetadata, *includeOnlyMatchingFilter, *excludeAlwaysMatchingFilter)
+	go loggingClientSumo.Start() //multi
+
+	logging.Info.Println("Creating Events")
+	events := eventRouting.NewEventRouting(cachingClient, &queue)
 	err := events.SetupEventRouting(*wantedEvents)
 	if err != nil {
-		log.Fatal("Error setting up event routing: ", err)
+		logging.Error.Fatal("Error setting up event routing: ", err)
 		os.Exit(1)
 
-	}
-
-	//Set extrafields if needed
-	events.SetExtraFields(*extraFields)
-
-	//Enable LogsTotalevent
-	if *logEventTotals {
-		logging.LogStd("Logging total events", true)
-		events.LogEventTotals(*logEventTotalsTime)
 	}
 
 	// Parse extra fields from cmd call
 	cachingClient.CreateBucket()
 	//Let's Update the database the first time
-	logging.LogStd("Start filling app/space/org cache.", true)
+	logging.Info.Printf("Start filling app/space/org cache.\n")
 	apps := cachingClient.GetAllApp()
-	logging.LogStd(fmt.Sprintf("Done filling cache! Found [%d] Apps", len(apps)), true)
+	logging.Info.Printf("Done filling cache! Found [%d] Apps \n", len(apps))
 
+	logging.Info.Println("Apps found: ")
+	for i := 0; i < len(apps); i++ {
+		logging.Info.Printf("[%d] "+apps[i].Name+" GUID: "+apps[i].Guid, i+1)
+	}
 	//Let's start the goRoutine
 	cachingClient.PerformPoollingCaching(*tickerTime)
 
 	firehoseConfig := &firehoseclient.FirehoseConfig{
 		TrafficControllerURL:   cfClient.Endpoint.DopplerEndpoint,
-		InsecureSSLSkipVerify:  *skipSSLValidation,
-		IdleTimeoutSeconds:     *keepAlive,
+		InsecureSSLSkipVerify:  true,
+		IdleTimeoutSeconds:     keepAlive,
 		FirehoseSubscriptionID: *subscriptionId,
 	}
 
-	if loggingClient.Connect() || *debug {
+	logging.Info.Printf("Connecting to Firehose... \n")
 
-		logging.LogStd("Connected to Syslog Server! Connecting to Firehose...", true)
-		firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
-		err = firehoseClient.Start()
-		if err != nil {
-			logging.LogError("Failed connecting to Firehose...Please check settings and try again!", "")
+	firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
+	go firehoseClient.Start()
 
-		} else {
-			logging.LogStd("Firehose Subscription Succesfull! Routing events...", true)
-		}
-
-	} else {
-		logging.LogError("Failed connecting to the Fluentd Server...Please check settings and try again!", "")
-	}
+	defer firehoseClient.Start()
 
 	defer cachingClient.Close()
+
 }

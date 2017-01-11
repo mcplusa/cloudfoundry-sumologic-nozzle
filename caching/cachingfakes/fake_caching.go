@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
 )
 
 type FakeCaching struct {

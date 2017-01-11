@@ -1,0 +1,129 @@
+---
+# The high-level description of your tile.
+# Replace these properties with real values.
+#
+name: sumo-logic-nozzle # By convention lowercase with dashes
+icon_file: resources/sumo_128x128-B.png
+label: Sumo Logic Nozzle for PCF
+description: Forward firehose logs to Sumo Logic
+
+# Global defaults (all optional)
+#
+# org: test-org                         # Name of org to create for your apps
+# space: test-space                     # Name of space to create for your apps
+org_quota: 4096                       # Optional, memory quota in mb
+
+stemcell_criteria:
+  os: ubuntu-trusty
+  requires_cpi: false
+  version: '3263'
+
+properties:
+- name: author
+  type: string
+  label: Author
+  value: mcplusa.com
+
+
+packages:
+- name: sumo-logic-nozzle
+  type: app
+  manifest:
+    # any options that you would normally specify in a cf manifest.yml, including</i>
+    buildpack: https://github.com/cloudfoundry/go-buildpack.git
+    command: firehose-to-sumologic
+    path: sumo-logic-nozzle.zip
+  health_check: none
+  needs_cf_credentials: true
+  enable_global_access_to_plans: true
+
+
+forms:
+- name: sumo-logic-config
+  label: Sumo Logic Settings
+  description: Sumo Logic Settings details
+  properties:
+  - name: sumo-endpoint
+    type: string
+    label: Sumo Logic Endpoint
+    description: Sumo Logic Endpoint where to send the logs
+  - name: sumo-post-minimum-delay
+    type: string
+    label: Sumo Logic Post Minimum Delay
+    description: Delay between post to Sumo Logic
+    default: 200ms
+  - name: sumo-category
+    type: string
+    label: Sumo Logic Category
+    description: Sumo Logic Category (this will override the default in Sumo Logic)
+    optional: true
+  - name: sumo-name
+    type: string
+    label: Sumo Logic Name
+    description: Sumo Logic Name (this will override the default in Sumo Logic)
+    optional: true
+  - name: sumo-host
+    type: string
+    label: Sumo Logic Host
+    description: Sumo Logic Host (this will override the default in Sumo Logic)
+    optional: true
+  - name: custom-metadata
+    type: string
+    label: Custom Metadata
+    description: Enter your custom metadata and values (key1:value1,key2:value2, etc...)
+    optional: true
+  - name: include-only-matching-filter
+    type: string
+    label: Include Only Matching Filter
+    description: Enter your Include Only Filter as key1:value1,key2:value2, etc...
+    optional: true
+  - name: exclude-always-matching-filter
+    type: string
+    label: Exclude Always Filter
+    description: Enter your Exclude Always Filter as key1:value1,key2:value2, etc...
+    optional: true
+
+
+
+- name: cf-config
+  label: Cloud Foundry Settings
+  description: Cloud Foundry Settings details
+  properties:
+  - name: api-endpoint
+    type: string
+    label: Cloud Foundry API Endpoint
+    description: API endpoint for CF
+  - name: cloudfoundry-user
+    type: string
+    label: Cloud Foundry User
+    description: Nozzle user
+  - name: cloudfoundry-password
+    type: secret
+    label: Cloud Foundry Password
+    description: Password for API user
+  - name: log-events-batch-size
+    type: string
+    label: Log Events Batch Size
+    description: Events Batch Size to send to Sumo Logic
+    default: 200
+  - name: events
+    type: string
+    label: Comma separated list of events you would like (Default is "LogMessage")
+    default: LogMessage
+    description: Valid options are Error, ContainerMetric, HttpStart, HttpStop, HttpStartStop, LogMessage, ValueMetric, CounterEvent
+  - name: verbose-log-messages
+    type: boolean
+    label: Verbose in 'LogMessage' event
+    default: true
+    description: If is not checked, it will send only the LogMessage and the App id
+  - name: nozzle-polling-period
+    type: string
+    label: Nozzle Polling Period
+    default: 15s
+    description: Time delay between checking the Nozzle for more events
+  - name: f2s-disable-logging
+    type: boolean
+    label: Disable Logging (Nozzle's Logs)
+    default: true
+    description: Handle if the Nozzle logs will be ignored and not send to Sumo Logic
+    configurable: false

@@ -2,17 +2,14 @@ package eventRouting
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/cloudfoundry-community/firehose-to-syslog/caching"
-	fevents "github.com/cloudfoundry-community/firehose-to-syslog/events"
-	"github.com/cloudfoundry-community/firehose-to-syslog/extrafields"
-	"github.com/cloudfoundry-community/firehose-to-syslog/logging"
-	"github.com/cloudfoundry/sonde-go/events"
-	"os"
 	"sort"
 	"strings"
 	"sync"
-	"time"
+
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/caching"
+	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
+	fevents "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	"github.com/cloudfoundry/sonde-go/events"
 )
 
 type EventRouting struct {
@@ -20,18 +17,16 @@ type EventRouting struct {
 	selectedEvents      map[string]bool
 	selectedEventsCount map[string]uint64
 	mutex               *sync.Mutex
-	log                 logging.Logging
-	ExtraFields         map[string]string
+	queue               *eventQueue.Queue
 }
 
-func NewEventRouting(caching caching.Caching, logging logging.Logging) *EventRouting {
+func NewEventRouting(caching caching.Caching, queue *eventQueue.Queue) *EventRouting {
 	return &EventRouting{
 		CachingClient:       caching,
 		selectedEvents:      make(map[string]bool),
 		selectedEventsCount: make(map[string]uint64),
-		log:                 logging,
+		queue:               queue,
 		mutex:               &sync.Mutex{},
-		ExtraFields:         make(map[string]string),
 	}
 }
 
@@ -66,7 +61,6 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 
 		event.AnnotateWithEnveloppeData(msg)
 
-		event.AnnotateWithMetaData(e.ExtraFields)
 		if _, hasAppId := event.Fields["cf_app_id"]; hasAppId {
 			event.AnnotateWithAppData(e.CachingClient)
 		}
@@ -76,9 +70,9 @@ func (e *EventRouting) RouteEvent(msg *events.Envelope) {
 		if ignored, hasIgnoredField := event.Fields["cf_ignored_app"]; ignored == true && hasIgnoredField {
 			e.selectedEventsCount["ignored_app_message"]++
 		} else {
-			e.log.ShipEvents(event.Fields, event.Msg)
+			//Push the event to the queue
+			e.queue.Push(event)
 			e.selectedEventsCount[eventType.String()]++
-
 		}
 		e.mutex.Unlock()
 	}
@@ -92,23 +86,13 @@ func (e *EventRouting) SetupEventRouting(wantedEvents string) error {
 		for _, event := range strings.Split(wantedEvents, ",") {
 			if e.isAuthorizedEvent(strings.TrimSpace(event)) {
 				e.selectedEvents[strings.TrimSpace(event)] = true
-				logging.LogStd(fmt.Sprintf("Event Type [%s] is included in the fireshose!", event), false)
+				//logging.LogStd(fmt.Sprintf("Event Type [%s] is included in the fireshose!", event), false)
 			} else {
 				return fmt.Errorf("Rejected Event Name [%s] - Valid events: %s", event, GetListAuthorizedEventEvents())
 			}
 		}
 	}
 	return nil
-}
-
-func (e *EventRouting) SetExtraFields(extraEventsString string) {
-	// Parse extra fields from cmd call
-	extraFields, err := extrafields.ParseExtraFields(extraEventsString)
-	if err != nil {
-		logging.LogError("Error parsing extra fields: ", err)
-		os.Exit(1)
-	}
-	e.ExtraFields = extraFields
 }
 
 func (e *EventRouting) isAuthorizedEvent(wantedEvent string) bool {
@@ -129,7 +113,7 @@ func GetListAuthorizedEventEvents() (authorizedEvents string) {
 	return strings.Join(arrEvents, ", ")
 }
 
-func (e *EventRouting) GetTotalCountOfSelectedEvents() uint64 {
+/*func (e *EventRouting) GetTotalCountOfSelectedEvents() uint64 {
 	var total = uint64(0)
 	for _, count := range e.GetSelectedEventsCount() {
 		total += count
@@ -154,12 +138,14 @@ func (e *EventRouting) LogEventTotals(logTotalsTime time.Duration) {
 			startTime = time.Now()
 			event, lastCount := e.getEventTotals(totalElapsedTime, elapsedTime, count)
 			count = lastCount
-			e.log.ShipEvents(event.Fields, event.Msg)
+
+			//Push the event to the queue
+			e.queue.Push(event)
 		}
 	}()
-}
+}*/
 
-func (e *EventRouting) getEventTotals(totalElapsedTime float64, elapsedTime float64, lastCount uint64) (*fevents.Event, uint64) {
+/*func (e *EventRouting) getEventTotals(totalElapsedTime float64, elapsedTime float64, lastCount uint64) (*fevents.Event, uint64) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	totalCount := e.GetTotalCountOfSelectedEvents()
@@ -181,3 +167,4 @@ func (e *EventRouting) getEventTotals(totalElapsedTime float64, elapsedTime floa
 	event.AnnotateWithMetaData(map[string]string{})
 	return event, totalCount
 }
+*/

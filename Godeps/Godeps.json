@@ -1,15 +1,10 @@
 {
-	"ImportPath": "github.com/cloudfoundry-community/firehose-to-syslog",
+	"ImportPath": "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic",
 	"GoVersion": "go1.7",
 	"GodepVersion": "v75",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.10.0",
-			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
-		},
-		{
-			"ImportPath": "github.com/Sirupsen/logrus/hooks/syslog",
 			"Comment": "v0.10.0",
 			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
 		},
@@ -106,10 +101,6 @@
 		{
 			"ImportPath": "golang.org/x/oauth2/internal",
 			"Rev": "2baa8a1b9338cf13d9eeb27696d761155fa480be"
-		},
-		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "9d4e42a20653790449273b3c85e67d6d8bae6e2e"
 		},
 		{
 			"ImportPath": "gopkg.in/alecthomas/kingpin.v2",

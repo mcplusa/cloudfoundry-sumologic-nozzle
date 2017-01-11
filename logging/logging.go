@@ -1,40 +1,45 @@
 package logging
 
 import (
-	"fmt"
-	"os"
-	"time"
+	"io"
+	"log"
 )
 
-//go:generate counterfeiter . Logging
+var (
+	Trace   *log.Logger
+	Info    *log.Logger
+	Warning *log.Logger
+	Error   *log.Logger
+)
 
-type Logging interface {
-	Connect() bool
-	ShipEvents(map[string]interface{}, string)
+func Init(
+	traceHandle io.Writer,
+	infoHandle io.Writer,
+	warningHandle io.Writer,
+	errorHandle io.Writer) {
+
+	Trace = log.New(traceHandle,
+		"TRACE: ",
+		log.Ldate|log.Ltime|log.Lshortfile)
+
+	Info = log.New(infoHandle,
+		"INFO: ",
+		log.Ldate|log.Ltime|log.Lshortfile)
+
+	Warning = log.New(warningHandle,
+		"WARNING: ",
+		log.Ldate|log.Ltime|log.Lshortfile)
+
+	Error = log.New(errorHandle,
+		"ERROR: ",
+		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
-func LogStd(message string, force bool) {
-	Log(message, force, false, nil)
-}
+/*func main() {
+    Init(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
 
-func LogError(message string, errMsg interface{}) {
-	Log(message, false, true, errMsg)
-}
-
-func Log(message string, force bool, isError bool, err interface{}) {
-
-	if force || isError {
-
-		writer := os.Stdout
-		var formattedMessage string
-
-		if isError {
-			writer = os.Stderr
-			formattedMessage = fmt.Sprintf("[%s] Exception occurred! Message: %s Details: %v", time.Now().String(), message, err)
-		} else {
-			formattedMessage = fmt.Sprintf("[%s] %s", time.Now().String(), message)
-		}
-
-		fmt.Fprintln(writer, formattedMessage)
-	}
-}
+    Trace.Println("I have something standard to say")
+    Info.Println("Special Information")
+    Warning.Println("There is something you need to know about")
+    Error.Println("Something has failed")
+}*/
