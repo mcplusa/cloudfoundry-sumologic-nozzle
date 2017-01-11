@@ -35,6 +35,7 @@ Flags:
   --version                      Show application version.
 ```
 
+
 There are two ways to run this Nozzle:
 
 1. Run as standalone app
@@ -47,6 +48,28 @@ godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https:
 ```
 
 If everything goes right, you should see in your terminal the _Nozzle's Logs_ and, in the __Sumo Logic endpoint__ (defined in the _--sumo-endpoint_ flag) you should see the logs according the events you choose (_'LogMessage'_ and _'ValueMetric'_ with _verbose_ in this case).
+
+
+### Filtering Option
+
+There is a lot of Events coming from Cloud Foundry and, in most of the cases, we will only want to see **some** of them or **exclude** some of them, in this cases the filtering flags are useful.
+
+If you want to include only the events that contains:
+
+* job: diego_cell
+* source_type: app
+
+and you are not interested in the events that contains:
+
+* source_type:other
+* unit:count
+
+The correct way of using those flags will be:
+
+```
+godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https://api.endpoint --cloudfoundry-user=some_user --cloudfoundry-password=some_password --sumo-post-minimum-delay=200ms --log-events-batch-size=200 --events=LogMessage, ValueMetric   --include-only-matching-filter=job:diego_cell,source_type:app --exclude-always-matching-filter=source_type:other,unit:count
+```
+
 
 ### Run as a tile in Pivotal Cloud Foundry
 
