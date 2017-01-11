@@ -52,19 +52,32 @@ If everything goes right, you should see in your terminal the _Nozzle's Logs_ an
 
 ### Filtering Option
 
-There is a lot of Events coming from Cloud Foundry and, in most of the cases, we will only want to see **some** of them or **exclude** some of them, in this cases the filtering flags are useful.
+asked. It works this way:
+* case 1:
+Include-Only filter="" (Empty)
+Exclude-Always filter="" (Empty)
+in this case, all the events will be sent to Sumo Logic
 
-If you want to include only the events that contains:
+* case 2:
+Include-Only filter="" (Empty)
+Exclude-Always filter= "source_type:other,origin:rep",
+in this case, all the events that contains a source-type:other field OR an origin:rep field will be not sent to Sumo Logic
 
-* job: diego_cell
-* source_type: app
+* case 3:
+Include-Only filter="job:diego_cell,source_type:other"
+Exclude-Always filter="" (Empty)
+in this case, Only the events that contains a job:diego-cell field OR a source-type:other field will be sent to Sumo Logic
 
-and you are not interested in the events that contains:
+* case 4:
+Include-Only filter="job:diego_cell,source_type:other"
+Exclude-Always filter="source_type:other,origin:rep"
 
-* source_type:other
-* unit:count
+in this case, all the events that contains a job:diego-cell field OR a source-type:other field will be sent to Sumo Logic
+AND also
+all the events that contains a source-type:other field OR an origin:rep field will be not sent to Sumo Logic
+if an event share both filters (contains a Include-Only filter field and a Exclude-Always filter field), Only the *Include-Only filter will be considered*
 
-The correct way of using those flags will be:
+The correct way of using those flags will be something like this:
 
 ```
 godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https://api.endpoint --cloudfoundry-user=some_user --cloudfoundry-password=some_password --sumo-post-minimum-delay=200ms --log-events-batch-size=200 --events=LogMessage, ValueMetric   --include-only-matching-filter=job:diego_cell,source_type:app --exclude-always-matching-filter=source_type:other,unit:count
