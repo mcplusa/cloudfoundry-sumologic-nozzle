@@ -3,7 +3,7 @@ package eventQueue
 import (
 	"testing"
 
-	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	. "github.com/mcplusa/cloudfoundry-sumologic-nozzle/events"
 	"github.com/stretchr/testify/assert"
 )
 

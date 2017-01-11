@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
-	. "bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
+	. "github.com/mcplusa/cloudfoundry-sumologic-nozzle/eventQueue"
+	. "github.com/mcplusa/cloudfoundry-sumologic-nozzle/events"
 )
 
 func TestAppenderStringBuilder(t *testing.T) {

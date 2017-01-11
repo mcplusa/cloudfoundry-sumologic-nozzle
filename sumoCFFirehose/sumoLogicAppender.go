@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/eventQueue"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/events"
-	"bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/logging"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/eventQueue"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/events"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/logging"
 )
 
 type SumoLogicAppender struct {

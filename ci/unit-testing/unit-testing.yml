@@ -8,7 +8,7 @@ image_resource:
 
 inputs:
   - name: firehouse-to-sumologic-ci
-    path: gopath/src/bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/
+    path: gopath/src/github.com/mcplusa/cloudfoundry-sumologic-nozzle/
 
 run:
-  path: gopath/src/bitbucket.org/mcplusa-ondemand/firehose-to-sumologic/ci/unit-testing/unit-testing
+  path: gopath/src/github.com/mcplusa/cloudfoundry-sumologic-nozzle/ci/unit-testing/unit-testing

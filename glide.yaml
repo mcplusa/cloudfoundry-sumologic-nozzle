@@ -1,4 +1,4 @@
-package: bitbucket.org/mcplusa-ondemand/firehose-to-sumologic
+package: github.com/mcplusa/cloudfoundry-sumologic-nozzle
 import:
 - package: github.com/Sirupsen/logrus
   version: v0.10.0
