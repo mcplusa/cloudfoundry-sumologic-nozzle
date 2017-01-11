@@ -70,8 +70,20 @@ forms:
   - name: custom-metadata
     type: string
     label: Custom Metadata
-    description: Enter your custom metatdata and values (key1:value1,key2:value2, etc...)
+    description: Enter your custom metadata and values (key1:value1,key2:value2, etc...)
     optional: true
+  - name: include-only-matching-filter
+    type: string
+    label: Include Only Matching Filter
+    description: Enter your Include Only Filter as key1:value1,key2:value2, etc...
+    optional: true
+  - name: exclude-always-matching-filter
+    type: string
+    label: Exclude Always Filter
+    description: Enter your Exclude Always Filter as key1:value1,key2:value2, etc...
+    optional: true
+
+
 
 - name: cf-config
   label: Cloud Foundry Settings

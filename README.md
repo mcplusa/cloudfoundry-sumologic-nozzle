@@ -2,8 +2,6 @@
 
 This Nozzle aggregates all the events from the _Firehose_ feature in Cloud Foundry towards Sumo Logic
 
-## Getting Started
-
 ### Options of use
 
 ```
@@ -18,17 +16,22 @@ Flags:
                                  Cloud Foundry User
   --cloudfoundry-password=CLOUDFOUNDRY-PASSWORD  
                                  Cloud Foundry Password
-  --events="LogMessage"          Comma separated list of events you would like. Valid options are ContainerMetric, CounterEvent, Error, HttpStart,HttpStartStop, HttpStop, LogMessage, ValueMetric
+  --events="LogMessage"          Comma separated list of events you would like. Valid options are ContainerMetric,
+                                 CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric
   --nozzle-polling-period=15s    Nozzle Polling Period
-  --log-events-batch-size=LOG-EVENTS-BATCH-SIZE  
-                                 Log Events Batch Size
-  --sumo-post-minimum-delay=SUMO-POST-MINIMUM-DELAY  
+  --log-events-batch-size=200    Log Events Batch Size to send to Sumo
+  --sumo-post-minimum-delay=200ms  
                                  Sumo Logic HTTP Post Minimum Delay
   --sumo-category=""             Sumo Logic Category
   --sumo-name=""                 Sumo Logic Name
   --sumo-host=""                 Sumo Logic Host
   --verbose-log-messages         Allow Verbose Log Messages
-  --custom-metadata=""           Custom Metadata
+  --custom-metadata=""           Use this flag for addingCustom Metadata (key1:value1,key2:value2, etc...)
+  --include-only-matching-filter=""  
+                                 Adds an 'Include only' filter to Events content (key1:value1,key2:value2, etc...)
+  --exclude-always-matching-filter=""  
+                                 Adds an 'Exclude always' filter to Events content (key1:value1,key2:value2,
+                                 etc...)
   --version                      Show application version.
 ```
 
