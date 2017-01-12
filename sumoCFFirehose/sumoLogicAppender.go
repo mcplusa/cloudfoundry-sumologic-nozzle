@@ -29,6 +29,7 @@ type SumoLogicAppender struct {
 	customMetadata              string
 	includeOnlyMatchingFilter   string
 	excludeAlwaysMatchingFilter string
+	nozzleVersion               string
 }
 
 type SumoBuffer struct {
@@ -37,7 +38,7 @@ type SumoBuffer struct {
 	timerIdlebuffer          time.Time
 }
 
-func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoHost string, verboseLogMessages bool, customMetadata string, includeOnlyMatchingFilter string, excludeAlwaysMatchingFilter string) *SumoLogicAppender {
+func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQueue *eventQueue.Queue, eventsBatchSize int, sumoPostMinimumDelay time.Duration, sumoCategory string, sumoName string, sumoHost string, verboseLogMessages bool, customMetadata string, includeOnlyMatchingFilter string, excludeAlwaysMatchingFilter string, nozzleVersion string) *SumoLogicAppender {
 	return &SumoLogicAppender{
 		url:                         urlValue,
 		connectionTimeout:           connectionTimeoutValue,
@@ -52,6 +53,7 @@ func NewSumoLogicAppender(urlValue string, connectionTimeoutValue int, nozzleQue
 		customMetadata:              customMetadata,
 		includeOnlyMatchingFilter:   includeOnlyMatchingFilter,
 		excludeAlwaysMatchingFilter: excludeAlwaysMatchingFilter,
+		nozzleVersion:               nozzleVersion,
 	}
 }
 
@@ -253,6 +255,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 			return
 		}
 		request.Header.Add("Content-Encoding", "gzip")
+		request.Header.Add("X-Sumo-Client", "cloudfoundry-sumologic-nozzle v"+s.nozzleVersion)
 
 		if s.sumoName != "" {
 			request.Header.Add("X-Sumo-Name", s.sumoName)
@@ -289,6 +292,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 					logging.Error.Printf("http.NewRequest() error: %v\n", err)
 				}
 				request.Header.Add("Content-Encoding", "gzip")
+				request.Header.Add("X-Sumo-Client", "cloudfoundry-sumologic-nozzle v"+s.nozzleVersion)
 
 				if s.sumoName != "" {
 					request.Header.Add("X-Sumo-Name", s.sumoName)
