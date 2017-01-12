@@ -65,7 +65,7 @@ func TestAppenderStringBuilder(t *testing.T) {
 
 	finalString := ""
 	for queue.GetCount() > 0 {
-		finalString = finalString + StringBuilder(queue.Pop(), true, "", "")
+		finalString = finalString + StringBuilder(queue.Pop(), true, "", "", "")
 	}
 	assert.Equal(t, finalString, "{\"Fields\":{\"deployment\":\"cf\",\"ip\":\"10.193.166.33\",\"job\":\"cloud_controller\",\"job_index\":\"c82feee9-2159-4b05-b669-a9929eb59017\",\"name\":\"requests.completed\",\"origin\":\"cc\",\"unit\":\"counter\",\"value\":558108},\"Msg\":\"\",\"Type\":\"ValueMetric\"}\n"+
 		"{\"Fields\":{\"delta\":9,\"deployment\":\"cf-redis\",\"ip\":\"10.193.166.84\",\"job\":\"dedicated-node\",\"job_index\":\"8081eca4-9e27-49cb-83ce-948e703c0939\",\"name\":\"dropsondeMarshaller.sentEnvelopes\",\"origin\":\"MetronAgent\",\"total\":10249446},\"Msg\":\"\",\"Type\":\"CounterEvent\"}\n"+
@@ -91,7 +91,7 @@ func TestStringBuilderVerboseLogsFalse(t *testing.T) {
 		Type: "LogMessage",
 	}
 
-	finalMessage := StringBuilder(&eventVerboseLogMessage, false, "", "")
+	finalMessage := StringBuilder(&eventVerboseLogMessage, false, "", "", "")
 	assert.NotContains(t, finalMessage, "source_type", "dsds")
 
 }
@@ -114,7 +114,7 @@ func TestStringBuilderVerboseLogsTrue(t *testing.T) {
 		Msg:  "Triggering 'app usage events fetcher'",
 		Type: "LogMessage",
 	}
-	finalMessage := StringBuilder(&eventVerboseLogMessage, true, "", "")
+	finalMessage := StringBuilder(&eventVerboseLogMessage, true, "", "", "")
 
 	assert.Contains(t, finalMessage, "source_type", "")
 

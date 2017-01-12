@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -148,7 +149,13 @@ func WantedEvent(event string, includeOnlyMatchingFilter string, excludeAlwaysMa
 
 }
 
-func StringBuilder(event *events.Event, verboseLogMessages bool, includeOnlyMatchingFilter string, excludeAlwaysMatchingFilter string) string {
+func StringBuilder(event *events.Event, verboseLogMessages bool, includeOnlyMatchingFilter string, excludeAlwaysMatchingFilter string, customMetadata string) string {
+	if customMetadata != "" {
+		customMetadataMap := ParseCustomInput(customMetadata)
+		for key, value := range customMetadataMap {
+			event.Fields[key] = value
+		}
+	}
 	eventType := event.Type
 	var msg []byte
 	switch eventType {
@@ -192,6 +199,12 @@ func StringBuilder(event *events.Event, verboseLogMessages bool, includeOnlyMatc
 				Msg:  event.Msg,
 				Type: event.Type,
 			}
+			if customMetadata != "" {
+				customMetadataMap := ParseCustomInput(customMetadata)
+				for key, value := range customMetadataMap {
+					eventNoVerbose.Fields[key] = value
+				}
+			}
 			message, err := json.Marshal(eventNoVerbose)
 			if err == nil {
 				msg = message
@@ -230,7 +243,7 @@ func StringBuilder(event *events.Event, verboseLogMessages bool, includeOnlyMatc
 }
 
 func (s *SumoLogicAppender) AppendLogs(buffer *SumoBuffer) {
-	buffer.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop(), s.verboseLogMessages, s.includeOnlyMatchingFilter, s.excludeAlwaysMatchingFilter)))
+	buffer.logStringToSend.Write([]byte(StringBuilder(s.nozzleQueue.Pop(), s.verboseLogMessages, s.includeOnlyMatchingFilter, s.excludeAlwaysMatchingFilter, s.customMetadata)))
 	buffer.logEventsInCurrentBuffer++
 
 }
@@ -244,6 +257,7 @@ func ParseCustomInput(customInput string) map[string]string {
 }
 
 func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
+	/*REMOVE*/ fmt.Println(logStringToSend)
 	if logStringToSend != "" {
 		var buf bytes.Buffer
 		g := gzip.NewWriter(&buf)
@@ -266,13 +280,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		if s.sumoCategory != "" {
 			request.Header.Add("X-Sumo-Category", s.sumoCategory)
 		}
-
-		if s.customMetadata != "" {
-			customMetadataMap := ParseCustomInput(s.customMetadata)
-			for key, value := range customMetadataMap {
-				request.Header.Add(key, value)
-			}
-		}
+		/*REMOVE*/ fmt.Println(time.Since(s.timerBetweenPost))
 		//checking the timer before first POST intent
 		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
 			logging.Trace.Println("Delaying Post because minimum post timer not expired")
@@ -303,12 +311,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 				if s.sumoCategory != "" {
 					request.Header.Add("X-Sumo-Category", s.sumoCategory)
 				}
-				if s.customMetadata != "" {
-					customMetadataMap := ParseCustomInput(s.customMetadata)
-					for key, value := range customMetadataMap {
-						request.Header.Add(key, value)
-					}
-				}
+
 				//checking the timer before POST (retry intent)
 				for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
 					logging.Trace.Println("Delaying Post because minimum post timer not expired")
@@ -327,7 +330,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 					time.Sleep(300 * time.Millisecond)
 					return attempt < 5, errRetry
 				} else if response.StatusCode == 200 {
-					logging.Trace.Println("Post of logs successful after retry...")
+					logging.Info. /*Trace.*/ Println("Post of logs successful after retry...")
 					s.timerBetweenPost = time.Now()
 					statusCode = response.StatusCode
 					return true, err
@@ -342,7 +345,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 				logging.Error.Printf("Not able to post after retry, with status code: %d", statusCode)
 			}
 		} else if response.StatusCode == 200 {
-			logging.Trace.Println("Post of logs successful")
+			logging.Info. /*Trace.*/ Println("Post of logs successful")
 			s.timerBetweenPost = time.Now()
 		}
 

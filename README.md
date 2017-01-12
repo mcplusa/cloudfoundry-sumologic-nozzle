@@ -7,32 +7,26 @@ This Nozzle aggregates all the events from the _Firehose_ feature in Cloud Found
 ```
 usage: main [<flags>]
 
-Flags:
-  --help                         Show context-sensitive help (also try --help-long and --help-man).
-  --api-endpoint=API-ENDPOINT    CF API Endpoint
-  --sumo-endpoint=SUMO-ENDPOINT  Sumo Logic Endpoint
-  --subscription-id="firehose"   Cloud Foundry ID for the subscription.
-  --cloudfoundry-user=CLOUDFOUNDRY-USER  
-                                 Cloud Foundry User
-  --cloudfoundry-password=CLOUDFOUNDRY-PASSWORD  
-                                 Cloud Foundry Password
-  --events="LogMessage"          Comma separated list of events you would like. Valid options are ContainerMetric,
-                                 CounterEvent, Error, HttpStart, HttpStartStop, HttpStop, LogMessage, ValueMetric
-  --nozzle-polling-period=15s    Nozzle Polling Period
-  --log-events-batch-size=200    Log Events Batch Size to send to Sumo
-  --sumo-post-minimum-delay=200ms  
-                                 Sumo Logic HTTP Post Minimum Delay
-  --sumo-category=""             Sumo Logic Category
-  --sumo-name=""                 Sumo Logic Name
-  --sumo-host=""                 Sumo Logic Host
-  --verbose-log-messages         Allow Verbose Log Messages
-  --custom-metadata=""           Use this flag for addingCustom Metadata (key1:value1,key2:value2, etc...)
-  --include-only-matching-filter=""  
-                                 Adds an 'Include only' filter to Events content (key1:value1,key2:value2, etc...)
-  --exclude-always-matching-filter=""  
-                                 Adds an 'Exclude always' filter to Events content (key1:value1,key2:value2,
-                                 etc...)
-  --version                      Show application version.
+Flags:  (See run command, in this document, for syntax of flags)
+--help                              Show context-sensitive help (also try --help-long and --help-man).
+--api-endpoint=                     CF API Endpoint
+--sumo-endpoint=                    SUMO-ENDPOINT Complete URL for the endpoint, copied from the Sumo Logic HTTP Source configuration
+--subscription-id="firehose"        Cloud Foundry ID for the subscription.
+--cloudfoundry-user=                Cloud Foundry User
+--cloudfoundry-password=            Cloud Foundry Password
+--events="LogMessage"               Comma separated list of events you would like. Valid options are ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop,
+                                    HttpStop, LogMessage, ValueMetric
+--nozzle-polling-period=15s         How frequently this Nozzle polls the CF Firehose for data
+--log-events-batch-size=500         When number of messages in the buffer is equal to this flag, send those to Sumo Logic
+--sumo-post-minimum-delay=2000ms    Minimum time between HTTP POST to Sumo Logic
+--sumo-category=""                  This value overrides the default 'Source Category' associated with the configured Sumo Logic HTTP Source
+--sumo-name=""                      This value overrides the default 'Source Name' associated with the configured Sumo Logic HTTP Source
+--sumo-host=""                      This value overrides the default 'Source Host' associated with the configured Sumo Logic HTTP Source
+--verbose-log-messages              Enable Verbose in 'LogMessage' Event. If this flag is NOT present, the LogMessage will contain ONLY the fields: tiemstamp, cf_app_guid, Msg
+--custom-metadata=""                Use this flag for addingCustom Metadata to the JSON (key1:value1,key2:value2, etc...)
+--include-only-matching-filter=""   Adds an 'Include only' filter to Events content (key1:value1,key2:value2, etc...)
+--exclude-always-matching-filter="" Adds an 'Exclude always' filter to Events content (key1:value1,key2:value2, etc...)
+--version                           Show application version.
 ```
 
 
@@ -43,8 +37,9 @@ There are two ways to run this Nozzle:
 
 ### Run as standalone app
 
+This is an example for running the Nozzle using the flags options described above:
 ```
-godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https://api.endpoint --cloudfoundry-user=some_user --cloudfoundry-password=some_password --sumo-post-minimum-delay=200ms --custom-metadata=Key1:Value1,Key2:Value2,Key3:Value3 --log-events-batch-size=200 --events=LogMessage, ValueMetric --verbose-log-messages
+godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https://api.endpoint --cloudfoundry-user=some_user --cloudfoundry-password=some_password --sumo-post-minimum-delay=200ms --sumo-host=123.123.123.0 --sumo-category=categoryTest --sumo-name=NameTestMETA --log-events-batch-size=200 --events=LogMessage, ValueMetric --verbose-log-messages
 ```
 
 If everything goes right, you should see in your terminal the _Nozzle's Logs_ and, in the __Sumo Logic endpoint__ (defined in the _--sumo-endpoint_ flag) you should see the logs according the events you choose (_'LogMessage'_ and _'ValueMetric'_ with _verbose_ in this case).
