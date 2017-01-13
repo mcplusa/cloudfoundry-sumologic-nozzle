@@ -257,7 +257,6 @@ func ParseCustomInput(customInput string) map[string]string {
 }
 
 func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
-	/*REMOVE*/ fmt.Println(logStringToSend)
 	if logStringToSend != "" {
 		var buf bytes.Buffer
 		g := gzip.NewWriter(&buf)
