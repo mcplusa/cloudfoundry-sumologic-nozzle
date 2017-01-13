@@ -244,3 +244,113 @@ func TestSendNoFilter(t *testing.T) {
 	buf.Write(msg)
 	assert.True(t, WantedEvent(buf.String(), "", ""), "This Event should be included")
 }
+
+func TestSendStringTimestamp(t *testing.T) {
+	eventStringTimestamp := Event{
+		Fields: map[string]interface{}{
+			"message_type":    "OUT",
+			"source_instance": 0,
+			"deployment":      "cf",
+			"ip":              "10.193.166.47",
+			"job":             "diego_cell",
+			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
+			"cf_ignored_app":  "false",
+			"timestamp":       "1483629662001580569",
+			"source_type":     "APP",
+			"origin":          "rep",
+			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
+		},
+		Msg:  "Triggering 'app usage events fetcher'",
+		Type: "LogMessage",
+	}
+	FormatTimestamp(&eventStringTimestamp, "timestamp")
+	timestamp := eventStringTimestamp.Fields["timestamp"]
+	assert.Equal(t, timestamp, "1483629662001580569", "This timestamp should be in the string")
+}
+
+func TestSendInt64Timestamp19(t *testing.T) {
+	eventStringTimestamp := Event{
+		Fields: map[string]interface{}{
+			"message_type":    "OUT",
+			"source_instance": 0,
+			"deployment":      "cf",
+			"ip":              "10.193.166.47",
+			"job":             "diego_cell",
+			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
+			"cf_ignored_app":  "false",
+			"timestamp":       int64(1483629662001580569),
+			"source_type":     "APP",
+			"origin":          "rep",
+			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
+		},
+		Msg:  "Triggering 'app usage events fetcher'",
+		Type: "LogMessage",
+	}
+	FormatTimestamp(&eventStringTimestamp, "timestamp")
+	timestamp := eventStringTimestamp.Fields["timestamp"]
+	assert.Equal(t, timestamp, "2017-01-05 12:21:02.001580569 -0300 CLST", "This timestamp should be in the string")
+}
+func TestSendInt64Timestamp14(t *testing.T) {
+	eventStringTimestamp := Event{
+		Fields: map[string]interface{}{
+			"message_type":    "OUT",
+			"source_instance": 0,
+			"deployment":      "cf",
+			"ip":              "10.193.166.47",
+			"job":             "diego_cell",
+			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
+			"cf_ignored_app":  "false",
+			"timestamp":       int64(148362966200),
+			"source_type":     "APP",
+			"origin":          "rep",
+			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
+		},
+		Msg:  "Triggering 'app usage events fetcher'",
+		Type: "LogMessage",
+	}
+	FormatTimestamp(&eventStringTimestamp, "timestamp")
+	timestamp := eventStringTimestamp.Fields["timestamp"]
+	assert.Equal(t, timestamp, "", "This timestamp should be in the string")
+}
+func TestSendWrongTimestampField(t *testing.T) {
+	eventStringTimestamp := Event{
+		Fields: map[string]interface{}{
+			"message_type":    "OUT",
+			"source_instance": 0,
+			"deployment":      "cf",
+			"ip":              "10.193.166.47",
+			"job":             "diego_cell",
+			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
+			"cf_ignored_app":  "false",
+			"timestamp":       int64(148362966200),
+			"source_type":     "APP",
+			"origin":          "rep",
+			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
+		},
+		Msg:  "Triggering 'app usage events fetcher'",
+		Type: "LogMessage",
+	}
+	assert.NotPanics(t, func() { FormatTimestamp(&eventStringTimestamp, "timestamp2") }, "msgAndArgs")
+}
+func TestSendNotIntNotStringTimestampField(t *testing.T) {
+	eventStringTimestamp := Event{
+		Fields: map[string]interface{}{
+			"message_type":    "OUT",
+			"source_instance": 0,
+			"deployment":      "cf",
+			"ip":              "10.193.166.47",
+			"job":             "diego_cell",
+			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
+			"cf_ignored_app":  "false",
+			"timestamp":       float32(148362966200),
+			"source_type":     "APP",
+			"origin":          "rep",
+			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
+		},
+		Msg:  "Triggering 'app usage events fetcher'",
+		Type: "LogMessage",
+	}
+	FormatTimestamp(&eventStringTimestamp, "timestamp")
+	timestamp := eventStringTimestamp.Fields["timestamp"]
+	assert.Equal(t, timestamp, "", "This timestamp should be in the string")
+}
