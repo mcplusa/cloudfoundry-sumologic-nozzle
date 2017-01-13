@@ -1,8 +1,19 @@
 applications:
 - name: cloudfoundry-sumologic-nozzle
 env:
+  API_ENDPOINT: https://api.run-05.haas-71.pez.pivotal.io
+  SUMO_ENDPOINT: https://endpoint1.collection.us2.sumologic.com/receiver/v1/http/ZaVnC4dhaV2MwJEtQ6LkXUg5aQJhwUCBW3l7m4hjJTCc_155MxHewswvcCfrE0uaqaKGc7MiNc4S3ErkJNBnVO7GekQpuVjE5Vn-LD5L_JvKjxHptCbnhA==
   FIREHOSE_SUBSCRIPTION_ID: cloudfoundry-sumologic-nozzle
+  CLOUDFOUNDRY_USER: firehose_user_authorized
+  CLOUDFOUNDRY_PASSWORD: password_firehose_user_authorized
+  EVENTS: LogMessage
+  NOZZLE_POLLING_PERIOD: 15s
   LOG_EVENTS_BATCHSIZE: 200
   SUMO_POST_MINIMUM_DELAY: 200ms
-  F2S_DISABLE_LOGGING: true
-  
+  SUMO_CATEGORY: ExampleCategory
+  SUMO_NAME: ExampleName
+  SUMO_HOST: 123.123.123.0
+  VERBOSE_LOG_MESSAGES: false
+  CUSTOM_METADATA: customData1:customValue1,CustomData2:CustomValue2
+  INCLUDE_ONLY_MATCHING_FILTER: ""
+  EXCLUDE_ALWAYS_MATCHING_FILTER: ""
