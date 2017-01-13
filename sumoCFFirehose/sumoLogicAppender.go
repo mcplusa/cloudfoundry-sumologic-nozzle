@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -79,7 +81,6 @@ func (s *SumoLogicAppender) Start() {
 
 		if time.Since(Buffer.timerIdlebuffer).Seconds() >= 10 && Buffer.logEventsInCurrentBuffer > 0 {
 			logging.Info.Println("Sending current batch of logs after timer exceeded limit")
-			//wg.Add(1)
 			go s.SendToSumo(Buffer.logStringToSend.String())
 			Buffer = newBuffer()
 			Buffer.timerIdlebuffer = time.Now()
@@ -148,6 +149,30 @@ func WantedEvent(event string, includeOnlyMatchingFilter string, excludeAlwaysMa
 	return true
 
 }
+func FormatTimestamp(event *events.Event, timestamp string) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
+
+	if reflect.TypeOf(event.Fields[timestamp]).Kind() != reflect.Int64 {
+		if reflect.TypeOf(event.Fields[timestamp]).Kind() == reflect.String {
+			event.Fields[timestamp] = event.Fields[timestamp].(string)
+		} else {
+			event.Fields[timestamp] = ""
+		}
+
+	}
+	if reflect.TypeOf(event.Fields[timestamp]).Kind() == reflect.Int64 {
+		if len(strconv.FormatInt(event.Fields[timestamp].(int64), 10)) == 19 {
+			event.Fields[timestamp] = time.Unix(0, event.Fields[timestamp].(int64)*int64(time.Nanosecond)).String()
+		} else if len(strconv.FormatInt(event.Fields[timestamp].(int64), 10)) < 13 {
+			event.Fields[timestamp] = ""
+		}
+	}
+
+}
 
 func StringBuilder(event *events.Event, verboseLogMessages bool, includeOnlyMatchingFilter string, excludeAlwaysMatchingFilter string, customMetadata string) string {
 	if customMetadata != "" {
@@ -160,31 +185,26 @@ func StringBuilder(event *events.Event, verboseLogMessages bool, includeOnlyMatc
 	var msg []byte
 	switch eventType {
 	case "HttpStart":
-		timestamp := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String()
-		event.Fields["timestamp"] = timestamp
+		FormatTimestamp(event, "timestamp")
 		message, err := json.Marshal(event)
 		if err == nil {
 			msg = message
 		}
 	case "HttpStop":
-		timestamp := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String()
-		event.Fields["timestamp"] = timestamp
+		FormatTimestamp(event, "timestamp")
 		message, err := json.Marshal(event)
 		if err == nil {
 			msg = message
 		}
 	case "HttpStartStop":
-		start_timestamp := time.Unix(0, event.Fields["start_timestamp"].(int64)*int64(time.Nanosecond)).String()
-		event.Fields["start_timestamp"] = start_timestamp
-		stop_timestamp := time.Unix(0, event.Fields["stop_timestamp"].(int64)*int64(time.Nanosecond)).String()
-		event.Fields["stop_timestamp"] = stop_timestamp
+		FormatTimestamp(event, "start_timestamp")
+		FormatTimestamp(event, "stop_timestamp")
 		message, err := json.Marshal(event)
 		if err == nil {
 			msg = message
 		}
 	case "LogMessage":
-		timestamp := time.Unix(0, event.Fields["timestamp"].(int64)*int64(time.Nanosecond)).String()
-		event.Fields["timestamp"] = timestamp
+		FormatTimestamp(event, "timestamp")
 		if verboseLogMessages == true {
 			message, err := json.Marshal(event)
 			if err == nil {
@@ -279,7 +299,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 		if s.sumoCategory != "" {
 			request.Header.Add("X-Sumo-Category", s.sumoCategory)
 		}
-		/*REMOVE*/ fmt.Println(time.Since(s.timerBetweenPost))
 		//checking the timer before first POST intent
 		for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
 			logging.Trace.Println("Delaying Post because minimum post timer not expired")
@@ -310,7 +329,6 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 				if s.sumoCategory != "" {
 					request.Header.Add("X-Sumo-Category", s.sumoCategory)
 				}
-
 				//checking the timer before POST (retry intent)
 				for time.Since(s.timerBetweenPost) < s.sumoPostMinimumDelay {
 					logging.Trace.Println("Delaying Post because minimum post timer not expired")
@@ -329,7 +347,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 					time.Sleep(300 * time.Millisecond)
 					return attempt < 5, errRetry
 				} else if response.StatusCode == 200 {
-					logging.Info. /*Trace.*/ Println("Post of logs successful after retry...")
+					logging.Trace.Println("Post of logs successful after retry...")
 					s.timerBetweenPost = time.Now()
 					statusCode = response.StatusCode
 					return true, err
@@ -344,7 +362,7 @@ func (s *SumoLogicAppender) SendToSumo(logStringToSend string) {
 				logging.Error.Printf("Not able to post after retry, with status code: %d", statusCode)
 			}
 		} else if response.StatusCode == 200 {
-			logging.Info. /*Trace.*/ Println("Post of logs successful")
+			logging.Trace.Println("Post of logs successful")
 			s.timerBetweenPost = time.Now()
 		}
 
