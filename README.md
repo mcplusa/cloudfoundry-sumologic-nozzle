@@ -16,6 +16,7 @@ Flags:  (See run command, in this document, for syntax of flags)
 --cloudfoundry-password=            Cloud Foundry Password
 --events="LogMessage"               Comma separated list of events you would like. Valid options are ContainerMetric, CounterEvent, Error, HttpStart, HttpStartStop,
                                     HttpStop, LogMessage, ValueMetric
+--skip-ssl-validation               Skip SSL validation (to allow things like self-signed certs). Do not set to true in production
 --nozzle-polling-period=15s         How frequently this Nozzle polls the CF Firehose for data
 --log-events-batch-size=500         When number of messages in the buffer is equal to this flag, send those to Sumo Logic
 --sumo-post-minimum-delay=2000ms    Minimum time between HTTP POST to Sumo Logic
@@ -76,7 +77,7 @@ If an event **share both filters** (contains a _Include-Only filter_ field and a
 The correct way of using those flags will be something like this:
 
 ```
-godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https://api.endpoint --cloudfoundry-user=some_user --cloudfoundry-password=some_password --sumo-post-minimum-delay=200ms --log-events-batch-size=200 --events=LogMessage, ValueMetric   --include-only-matching-filter=job:diego_cell,source_type:app --exclude-always-matching-filter=source_type:other,unit:count
+godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https://api.endpoint --skip-ssl-validation --cloudfoundry-user=some_user --cloudfoundry-password=some_password --sumo-post-minimum-delay=200ms --log-events-batch-size=200 --events=LogMessage, ValueMetric   --include-only-matching-filter=job:diego_cell,source_type:app --exclude-always-matching-filter=source_type:other,unit:count 
 ```
 
 

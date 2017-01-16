@@ -7,6 +7,7 @@ env:
   CLOUDFOUNDRY_USER: firehose_user_authorized
   CLOUDFOUNDRY_PASSWORD: password_firehose_user_authorized
   EVENTS: LogMessage
+  SKIP_SSL_VALIDATION: false
   NOZZLE_POLLING_PERIOD: 15s
   LOG_EVENTS_BATCHSIZE: 200
   SUMO_POST_MINIMUM_DELAY: 200ms
