@@ -78,10 +78,14 @@ func main() {
 		ApiAddress:        *apiEndpoint,
 		Username:          *user,
 		Password:          *password,
-		SkipSslValidation: true,
+		SkipSslValidation: *skipSSLValidation,
 	}
-	cfClient, _ := cfclient.NewClient(&c)
+	cfClient, errCfClient := cfclient.NewClient(&c)
 
+	if errCfClient != nil {
+		logging.Error.Fatal("Error setting up CF Client: ", errCfClient)
+		os.Exit(1)
+	}
 	//Creating Caching
 	var cachingClient caching.Caching
 	if caching.IsNeeded(*wantedEvents) {
