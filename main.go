@@ -27,6 +27,7 @@ var (
 	keepAlive, errK             = time.ParseDuration("25s") //default Error,ContainerMetric,HttpStart,HttpStop,HttpStartStop,LogMessage,ValueMetric,CounterEvent
 	wantedEvents                = kingpin.Flag("events", fmt.Sprintf("Comma separated list of events you would like. Valid options are %s", eventRouting.GetListAuthorizedEventEvents())).Default("LogMessage").OverrideDefaultFromEnvar("EVENTS").String()
 	boltDatabasePath            = "event.db"
+	skipSSLValidation           = kingpin.Flag("skip-ssl-validation", "Skip SSL validation (to allow things like self-signed certs). Do not set to true in production").Default("false").OverrideDefaultFromEnvar("SKIP_SSL_VALIDATION").Bool()
 	tickerTime                  = kingpin.Flag("nozzle-polling-period", "How frequently this Nozzle polls the CF Firehose for data").Default("15s").OverrideDefaultFromEnvar("NOZZLE_POLLING_PERIOD").Duration()
 	eventsBatchSize             = kingpin.Flag("log-events-batch-size", "When number of messages in the buffer is equal to this flag, send those to Sumo Logic").Default("500").OverrideDefaultFromEnvar("LOG_EVENTS_BATCH_SIZE").Int()
 	sumoPostMinimumDelay        = kingpin.Flag("sumo-post-minimum-delay", "Minimum time between HTTP POST to Sumo Logic").Default("2000ms").OverrideDefaultFromEnvar("SUMO_POST_MINIMUM_DELAY").Duration()
@@ -51,15 +52,16 @@ func main() {
 	kingpin.Parse()
 
 	logging.Info.Println("Set Configurations:")
-	logging.Info.Println("CF API Endpoint: t" + *apiEndpoint)
+	logging.Info.Println("CF API Endpoint: " + *apiEndpoint)
 	logging.Info.Println("Sumo Logic Endpoint: " + *sumoEndpoint)
 	//logging.Info.Println("Cloud foundry Doppler Endpoint: " + *dopplerEndpoint) //TODO
 	logging.Info.Println("Cloud Foundry Nozzle Subscription ID: " + *subscriptionId)
 	logging.Info.Println("Cloud Foundry User: " + *user)
 	logging.Info.Println("Events Selected: " + *wantedEvents)
-	logging.Info.Printf("Nozzle Polling Period: %v\n", *tickerTime)
-	logging.Info.Printf("Log Events Batch Size: [%d]\n", *eventsBatchSize)
-	logging.Info.Printf("Sumo Logic HTTP Post Minimum Delay: %v\n", *sumoPostMinimumDelay)
+	logging.Info.Printf("Skip SSL Validation: %v", *skipSSLValidation)
+	logging.Info.Printf("Nozzle Polling Period: %v", *tickerTime)
+	logging.Info.Printf("Log Events Batch Size: [%d]", *eventsBatchSize)
+	logging.Info.Printf("Sumo Logic HTTP Post Minimum Delay: %v", *sumoPostMinimumDelay)
 	if *sumoName != "" {
 		logging.Info.Println("Sumo Logic Name: " + *sumoName)
 	}
@@ -118,7 +120,7 @@ func main() {
 
 	firehoseConfig := &firehoseclient.FirehoseConfig{
 		TrafficControllerURL:   cfClient.Endpoint.DopplerEndpoint,
-		InsecureSSLSkipVerify:  true,
+		InsecureSSLSkipVerify:  *skipSSLValidation,
 		IdleTimeoutSeconds:     keepAlive,
 		FirehoseSubscriptionID: *subscriptionId,
 	}

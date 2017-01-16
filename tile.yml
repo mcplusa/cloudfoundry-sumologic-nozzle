@@ -110,6 +110,11 @@ forms:
     label: Comma separated list of events you would like (Default is "LogMessage")
     default: LogMessage
     description: Valid options are Error,ContainerMetric,HttpStart,HttpStop,HttpStartStop,LogMessage,ValueMetric,CounterEvent
+  - name: skip-ssl-validation
+    type: boolean
+    label: Skip SSL validation
+    default: false
+    description: Skip SSL validation (to allow things like self-signed certs). Do not set to true in production
   - name: verbose-log-messages
     type: boolean
     label: Verbose in 'LogMessage' event
