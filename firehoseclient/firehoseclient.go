@@ -4,12 +4,12 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/eventRouting"
-	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/logging"
 	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gorilla/websocket"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/eventRouting"
+	"github.com/mcplusa/cloudfoundry-sumologic-nozzle/logging"
 )
 
 type FirehoseNozzle struct {
@@ -48,6 +48,7 @@ func (f *FirehoseNozzle) Start() error {
 	logging.Info.Printf("consume the firehose... \n")
 	err := f.routeEvent()
 	return err
+
 }
 
 func (f *FirehoseNozzle) consumeFirehose() {
@@ -77,22 +78,22 @@ func (f *FirehoseNozzle) handleError(err error) {
 
 	switch {
 	case websocket.IsCloseError(err, websocket.CloseNormalClosure):
-		//logging.LogError("Normal Websocket Closure", err)
+		logging.Error.Printf("Normal Websocket Closure: %v ", err)
 	case websocket.IsCloseError(err, websocket.ClosePolicyViolation):
-		//logging.LogError("Error while reading from the firehose", err)
-		//logging.LogError("Disconnected because nozzle couldn't keep up. Please try scaling up the nozzle.", nil)
+		logging.Error.Printf("Error while reading from the firehose: %v ", err)
+		logging.Error.Println("Disconnected because nozzle couldn't keep up. Please try scaling up the nozzle.")
 
 	default:
-		//logging.LogError("Error while reading from the firehose", err)
+		logging.Error.Printf("Error while reading from the firehose: %v", err)
 	}
 
-	//logging.LogError("Closing connection with traffic controller due to error", err)
+	logging.Error.Printf("Closing connection with traffic controller due to error: %v", err)
 	f.consumer.Close()
 }
 
 func (f *FirehoseNozzle) handleMessage(envelope *events.Envelope) {
 	if envelope.GetEventType() == events.Envelope_CounterEvent && envelope.CounterEvent.GetName() == "TruncatingBuffer.DroppedMessages" && envelope.GetOrigin() == "doppler" {
-		//logging.LogStd("We've intercepted an upstream message which indicates that the nozzle or the TrafficController is not keeping up. Please try scaling up the nozzle.", true)
+		logging.Info.Println("We've intercepted an upstream message which indicates that the nozzle or the TrafficController is not keeping up. Please try scaling up the nozzle.")
 	}
 }
 

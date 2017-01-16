@@ -124,12 +124,9 @@ func main() {
 	}
 
 	logging.Info.Printf("Connecting to Firehose... \n")
-
 	firehoseClient := firehoseclient.NewFirehoseNozzle(cfClient, events, firehoseConfig)
-	go firehoseClient.Start()
-
-	defer firehoseClient.Start()
-
+	errFirehose := firehoseClient.Start()
+	logging.Info.Printf("FirehoseClient Error: %v", errFirehose)
 	defer cachingClient.Close()
 
 }
