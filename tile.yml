@@ -45,41 +45,41 @@ forms:
   - name: sumo-endpoint
     type: string
     label: Sumo Logic Endpoint
-    description: Sumo Logic Endpoint where to send the logs
+    description: Complete URL for the endpoint, copied from the Sumo Logic HTTP Source configuration
   - name: sumo-post-minimum-delay
     type: string
     label: Sumo Logic Post Minimum Delay
-    description: Delay between post to Sumo Logic
-    default: 200ms
+    description: Minimum time between HTTP POST to Sumo Logic
+    default: 2000ms
   - name: sumo-category
     type: string
     label: Sumo Logic Category
-    description: Sumo Logic Category (this will override the default in Sumo Logic)
+    description: This value overrides the default 'Source Category' associated with the configured Sumo Logic HTTP Source
     optional: true
   - name: sumo-name
     type: string
     label: Sumo Logic Name
-    description: Sumo Logic Name (this will override the default in Sumo Logic)
+    description: This value overrides the default 'Source Name' associated with the configured Sumo Logic HTTP Source
     optional: true
   - name: sumo-host
     type: string
     label: Sumo Logic Host
-    description: Sumo Logic Host (this will override the default in Sumo Logic)
+    description: This value overrides the default 'Source Host' associated with the configured Sumo Logic HTTP Source
     optional: true
   - name: custom-metadata
     type: string
     label: Custom Metadata
-    description: Enter your custom metadata and values (key1:value1,key2:value2, etc...)
+    description: Use this field for addingCustom Metadata to the JSON (key1:value1,key2:value2, etc...)
     optional: true
   - name: include-only-matching-filter
     type: string
     label: Include Only Matching Filter
-    description: Enter your Include Only Filter as key1:value1,key2:value2, etc...
+    description: Adds an 'Include only' filter to Events content (key1:value1,key2:value2, etc...)
     optional: true
   - name: exclude-always-matching-filter
     type: string
     label: Exclude Always Filter
-    description: Enter your Exclude Always Filter as key1:value1,key2:value2, etc...
+    description: Adds an 'Exclude always' filter to Events content (key1:value1,key2:value2, etc...)
     optional: true
 
 
@@ -91,7 +91,7 @@ forms:
   - name: api-endpoint
     type: string
     label: Cloud Foundry API Endpoint
-    description: API endpoint for CF
+    description: URL to CF API Endpoint
   - name: cloudfoundry-user
     type: string
     label: Cloud Foundry User
@@ -103,23 +103,23 @@ forms:
   - name: log-events-batch-size
     type: string
     label: Log Events Batch Size
-    description: Events Batch Size to send to Sumo Logic
-    default: 200
+    description: When number of messages in the buffer is equal to this field, send those to Sumo Logic
+    default: 500
   - name: events
     type: string
     label: Comma separated list of events you would like (Default is "LogMessage")
     default: LogMessage
-    description: Valid options are Error, ContainerMetric, HttpStart, HttpStop, HttpStartStop, LogMessage, ValueMetric, CounterEvent
+    description: Valid options are Error,ContainerMetric,HttpStart,HttpStop,HttpStartStop,LogMessage,ValueMetric,CounterEvent
   - name: verbose-log-messages
     type: boolean
     label: Verbose in 'LogMessage' event
     default: true
-    description: If is not checked, it will send only the LogMessage and the App id
+    description: Enable Verbose in 'LogMessage' Event. If is not checked, the 'LogMessage' will contain ONLY the fields 'tiemstamp', 'cf_app_guid', 'Msg'
   - name: nozzle-polling-period
     type: string
     label: Nozzle Polling Period
     default: 15s
-    description: Time delay between checking the Nozzle for more events
+    description: How frequently this Nozzle polls the CF Firehose for data
   - name: f2s-disable-logging
     type: boolean
     label: Disable Logging (Nozzle's Logs)

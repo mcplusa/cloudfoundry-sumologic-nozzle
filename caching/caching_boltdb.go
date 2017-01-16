@@ -151,6 +151,7 @@ func (c *CachingBolt) GetAppInfo(appGuid string) App {
 }
 
 func (c *CachingBolt) Close() {
+	//logging.Info.Printf("Closing Caching...")
 	c.Appdb.Close()
 }
 
