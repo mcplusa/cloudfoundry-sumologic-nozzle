@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	apiEndpoint  = kingpin.Flag("api-endpoint", "URL to CF API Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String()
-	sumoEndpoint = kingpin.Flag("sumo-endpoint", "SUMO-ENDPOINT Complete URL for the endpoint, copied from the Sumo Logic HTTP Source configuration").OverrideDefaultFromEnvar("SUMO_ENDPOINT").String()
-	//dopplerEndpoint      = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
+	apiEndpoint                 = kingpin.Flag("api-endpoint", "URL to CF API Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String()
+	sumoEndpoint                = kingpin.Flag("sumo-endpoint", "SUMO-ENDPOINT Complete URL for the endpoint, copied from the Sumo Logic HTTP Source configuration").OverrideDefaultFromEnvar("SUMO_ENDPOINT").String()
+	dopplerEndpoint             = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
 	subscriptionId              = kingpin.Flag("subscription-id", "Cloud Foundry ID for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
 	user                        = kingpin.Flag("cloudfoundry-user", "Cloud Foundry User").OverrideDefaultFromEnvar("CLOUDFOUNDRY_USER").String() //user created in CF, authorized to connect the firehose
 	password                    = kingpin.Flag("cloudfoundry-password", "Cloud Foundry Password").OverrideDefaultFromEnvar("CLOUDFOUNDRY_PASSWORD").String()
@@ -54,7 +54,6 @@ func main() {
 	logging.Info.Println("Set Configurations:")
 	logging.Info.Println("CF API Endpoint: " + *apiEndpoint)
 	logging.Info.Println("Sumo Logic Endpoint: " + *sumoEndpoint)
-	//logging.Info.Println("Cloud foundry Doppler Endpoint: " + *dopplerEndpoint) //TODO
 	logging.Info.Println("Cloud Foundry Nozzle Subscription ID: " + *subscriptionId)
 	logging.Info.Println("Cloud Foundry User: " + *user)
 	logging.Info.Println("Events Selected: " + *wantedEvents)
@@ -86,6 +85,11 @@ func main() {
 		logging.Error.Fatal("Error setting up CF Client: ", errCfClient)
 		os.Exit(1)
 	}
+	if len(*dopplerEndpoint) > 0 {
+		cfClient.Endpoint.DopplerEndpoint = *dopplerEndpoint
+	}
+	logging.Info.Printf("Using %s as doppler endpoint", cfClient.Endpoint.DopplerEndpoint)
+
 	//Creating Caching
 	var cachingClient caching.Caching
 	if caching.IsNeeded(*wantedEvents) {

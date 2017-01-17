@@ -93,6 +93,11 @@ forms:
     type: string
     label: Cloud Foundry API Endpoint
     description: URL to CF API Endpoint
+  - name: doppler-endpoint
+    type: string
+    label: Doppler Endpoint
+    description: Overwrite default doppler endpoint return by /v2/info
+    optional: true
   - name: cloudfoundry-user
     type: string
     label: Cloud Foundry User
@@ -126,9 +131,3 @@ forms:
     label: Nozzle Polling Period
     default: 15s
     description: How frequently this Nozzle polls the CF Firehose for data
-  - name: f2s-disable-logging
-    type: boolean
-    label: Disable Logging (Nozzle's Logs)
-    default: true
-    description: Handle if the Nozzle logs will be ignored and not send to Sumo Logic
-    configurable: false

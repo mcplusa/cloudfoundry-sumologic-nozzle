@@ -1,5 +1,5 @@
 # cloudfoundry-sumologic-nozzle
-
+===============================
 This Nozzle aggregates all the events from the _Firehose_ feature in Cloud Foundry towards Sumo Logic
 
 ### Options of use
@@ -11,6 +11,7 @@ Flags:  (See run command, in this document, for syntax of flags)
 --help                              Show context-sensitive help (also try --help-long and --help-man).
 --api-endpoint=                     CF API Endpoint
 --sumo-endpoint=                    SUMO-ENDPOINT Complete URL for the endpoint, copied from the Sumo Logic HTTP Source configuration
+--doppler-endpoint=                 Overwrite default doppler endpoint return by /v2/info
 --subscription-id="firehose"        Cloud Foundry ID for the subscription.
 --cloudfoundry-user=                Cloud Foundry User
 --cloudfoundry-password=            Cloud Foundry Password
@@ -67,17 +68,18 @@ in this case, Only the events that contains a _**job:diego-cell**_ field OR a _*
 
 * **Case 4**:
 **Include-Only filter**=job:diego_cell,source_type:other
-**Exclude-Always filter**=source_type:other,origin:rep
+**Exclude-Always filter**=source_type:app,origin:rep
 In this case, all the events that contains a _**job:diego-cell**_ field OR a _**source-type:other**_ field will be sent to Sumo Logic
 **AND also**
-All the events that contains a _**source-type:other**_ field OR an _**origin:rep**_ field will be not sent to Sumo Logic
+All the events that contains a _**source-type:other**_ field OR an _**origin:app**_ field will be not sent to Sumo Logic.
 
-If an event **share both filters** (contains a _Include-Only filter_ field and a _Exclude-Always_ filter field), Only the _**Include-Only**_ filter will be considered.
+**IMPORTANT**: **Exclude filter _overrides_ Include filter** . This way if one or more of the App's logs fields **match both filters** (contains a _Include-Only filter_ field and a _Exclude-Always_ filter), this log will be **NOT** sent to Sumo Logic.
+
 
 The correct way of using those flags will be something like this:
 
 ```
-godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https://api.endpoint --skip-ssl-validation --cloudfoundry-user=some_user --cloudfoundry-password=some_password --sumo-post-minimum-delay=200ms --log-events-batch-size=200 --events=LogMessage, ValueMetric   --include-only-matching-filter=job:diego_cell,source_type:app --exclude-always-matching-filter=source_type:other,unit:count 
+godep go run main.go --sumo-endpoint=https://sumo-endpoint --api-endpoint=https://api.endpoint --skip-ssl-validation --cloudfoundry-user=some_user --cloudfoundry-password=some_password --sumo-post-minimum-delay=200ms --log-events-batch-size=200 --events=LogMessage, ValueMetric   --include-only-matching-filter=job:diego_cell,source_type:app --exclude-always-matching-filter=source_type:other,unit:count
 ```
 
 
@@ -89,27 +91,28 @@ The tile configuration is handled in the 'tile.yml' file. (If you want to modify
 
 #### Steps to run as this Nozzle as a tile in PCF:
 
- ##### Step 1 - Install the tile-generator python package
-
+##### Step 1 - Install the tile-generator python package
 * Follow the Official Pivotal Instructions: http://docs.pivotal.io/tiledev/tile-generator.html#how-to
 (only until half of the _step 3_, DON'T DO 'tile init', only cd into the 'cloudfoundry-sumologic-nozzle' folder)
 
- ##### Step 2 - Check the tile file
+##### Step 2 - Check the tile file
+
 * If you want to add more settings to the tile or remove some. Check the Official Pivotal Documentation for more options http://docs.pivotal.io/tiledev/tile-generator.html#define
 
- ##### Step 3 - Prepare your code:
+##### Step 3 - Prepare your code:
+
 * Zip your entire code and place the zip file into the root directory of the project for which you wish to create a tile. For this tile use this command: (you should do this in a new terminal window)
 
     ```
     zip -r sumo-logic-nozzle.zip bitbucket-pipelines.yml caching/ ci/ eventQueue/ eventRouting/ events/ firehoseclient/ glide.yaml glide.lock Godeps/ LICENSE logging/ main.go manifest.yml event.db Procfile sumoCFFirehose/ utils/ vendor/
     ```
- ##### Step 4 - Build tile file
+##### Step 4 - Build tile file
 * go to the 'tile-generator' terminal window and run
 
     ```
     $ tile build
     ```
- ##### Step 4 - Install the tile in Pivotal Cloud Foundry
+##### Step 5 - Install the tile in Pivotal Cloud Foundry
 * Login with proper credentials into the OPS Manager and import the .pivotal file created above and wait.
 * Then add it to the Installation Dashboard to configure it. You should able to configure the settings created in the tile file.
 * Update the changes and you should start to see some logs in the Sumo Logic Endpoint defined.
@@ -134,6 +137,7 @@ $ cf push cloudfoundry-sumologic-nozzle --no-start
 ```
 $ cf set-env cloudfoundry-sumologic-nozzle API_ENDPOINT https://api.[your cf system domain]
 $ cf set-env cloudfoundry-sumologic-nozzle SUMO_ENDPOINT https://sumo-endpoint
+$ cf set-env cloudfoundry-sumologic-nozzle DOPPLER_ENDPOINT: wss://doppler.bosh-lite.com:443
 $ cf set-env cloudfoundry-sumologic-nozzle FIREHOSE_SUBSCRIPTION_ID cloudfoundry-sumologic-nozzle
 $ cf set-env cloudfoundry-sumologic-nozzle CLOUDFOUNDRY_USER [your doppler.firehose enabled user]
 $ cf set-env cloudfoundry-sumologic-nozzle CLOUDFOUNDRY_PASSWORD [your doppler.firehose enabled user password]
