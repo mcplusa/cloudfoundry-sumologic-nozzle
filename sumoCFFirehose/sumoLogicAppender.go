@@ -119,6 +119,11 @@ func WantedEvent(event string, includeOnlyMatchingFilter string, excludeAlwaysMa
 		subsliceExclude := ParseCustomInput(excludeAlwaysMatchingFilter)
 		for key, value := range subsliceInclude {
 			if strings.Contains(event, "\""+key+"\":\""+value+"\"") {
+				for key, value := range subsliceExclude {
+					if strings.Contains(event, "\""+key+"\":\""+value+"\"") {
+						return false
+					}
+				}
 				return true
 			}
 		}
@@ -127,7 +132,7 @@ func WantedEvent(event string, includeOnlyMatchingFilter string, excludeAlwaysMa
 				return false
 			}
 		}
-		return false
+		return true
 	} else if includeOnlyMatchingFilter != "" {
 		subslice := ParseCustomInput(includeOnlyMatchingFilter)
 		for key, value := range subslice {
