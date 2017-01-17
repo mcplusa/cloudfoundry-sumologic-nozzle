@@ -188,7 +188,7 @@ func TestSendExcludeAlwaysFilter(t *testing.T) {
 	excludeAlwaysFilter := "source_type:other,cf_app_id:7833dc75-4484-409c-9b74-90b6454906c6"
 	assert.False(t, WantedEvent(buf.String(), "", excludeAlwaysFilter), "This Event should be excluded")
 }
-func TestSendIncludeOnlyAlwaysFilter(t *testing.T) {
+func TestSendIncludeExcludeFilterOverride(t *testing.T) {
 	eventToExclude := Event{
 		Fields: map[string]interface{}{
 			"message_type":    "OUT",
@@ -215,8 +215,99 @@ func TestSendIncludeOnlyAlwaysFilter(t *testing.T) {
 	buf.Write(msg)
 	includeOnlyFilter := "job:diego_cell,source_type:other"
 	excludeAlwaysFilter := "source_type:other,cf_app_id:7833dc75-4484-409c-9b74-90b6454906c6"
+	assert.False(t, WantedEvent(buf.String(), includeOnlyFilter, excludeAlwaysFilter), "This Event should be not included, override filter")
+}
+
+func TestSendIncludeExcludeFilterAppMatchIncluded(t *testing.T) {
+	eventToExclude := Event{
+		Fields: map[string]interface{}{
+			"message_type":    "OUT",
+			"source_instance": 0,
+			"deployment":      "cf",
+			"ip":              "10.193.166.47",
+			"job":             "diego_cell",
+			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
+			"cf_ignored_app":  "false",
+			"timestamp":       "2017-01-10 17:31:02.662133274 -0300 CLST",
+			"source_type":     "APP",
+			"origin":          "rep",
+			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
+		},
+		Msg:  "Triggering 'app usage events fetcher'",
+		Type: "LogMessage",
+	}
+	message, err := json.Marshal(eventToExclude)
+	var msg []byte
+	if err == nil {
+		msg = message
+	}
+	buf := new(bytes.Buffer)
+	buf.Write(msg)
+	includeOnlyFilter := "job:diego_cell,source_type:other"
+	excludeAlwaysFilter := "source_type:other,origin:router"
 	assert.True(t, WantedEvent(buf.String(), includeOnlyFilter, excludeAlwaysFilter), "This Event should be included")
 }
+
+func TestSendIncludeExcludeFilterAppMatchExcluded(t *testing.T) {
+	eventToExclude := Event{
+		Fields: map[string]interface{}{
+			"message_type":    "OUT",
+			"source_instance": 0,
+			"deployment":      "cf",
+			"ip":              "10.193.166.47",
+			"job":             "diego_cell",
+			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
+			"cf_ignored_app":  "false",
+			"timestamp":       "2017-01-10 17:31:02.662133274 -0300 CLST",
+			"source_type":     "APP",
+			"origin":          "rep",
+			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
+		},
+		Msg:  "Triggering 'app usage events fetcher'",
+		Type: "LogMessage",
+	}
+	message, err := json.Marshal(eventToExclude)
+	var msg []byte
+	if err == nil {
+		msg = message
+	}
+	buf := new(bytes.Buffer)
+	buf.Write(msg)
+	includeOnlyFilter := "job:dedicated-node,source_type:other"
+	excludeAlwaysFilter := "source_type:other,origin:rep"
+	assert.False(t, WantedEvent(buf.String(), includeOnlyFilter, excludeAlwaysFilter), "This Event should not be included")
+}
+
+func TestSendIncludeExcludeFilterAppNotMatchAnyFilter(t *testing.T) {
+	eventToExclude := Event{
+		Fields: map[string]interface{}{
+			"message_type":    "OUT",
+			"source_instance": 0,
+			"deployment":      "cf",
+			"ip":              "10.193.166.47",
+			"job":             "diego_cell",
+			"job_index":       "c62aebe5-16b8-43f5-a589-1267e09b9537",
+			"cf_ignored_app":  "false",
+			"timestamp":       "2017-01-10 17:31:02.662133274 -0300 CLST",
+			"source_type":     "APP",
+			"origin":          "rep",
+			"cf_app_id":       "7833dc75-4484-409c-9b74-90b6454906c6",
+		},
+		Msg:  "Triggering 'app usage events fetcher'",
+		Type: "LogMessage",
+	}
+	message, err := json.Marshal(eventToExclude)
+	var msg []byte
+	if err == nil {
+		msg = message
+	}
+	buf := new(bytes.Buffer)
+	buf.Write(msg)
+	includeOnlyFilter := "job:dedicated-node,source_type:other"
+	excludeAlwaysFilter := "source_type:other,origin:reps"
+	assert.True(t, WantedEvent(buf.String(), includeOnlyFilter, excludeAlwaysFilter), "This Event should be included")
+}
+
 func TestSendNoFilter(t *testing.T) {
 	eventToExclude := Event{
 		Fields: map[string]interface{}{

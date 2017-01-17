@@ -3,10 +3,11 @@ applications:
 env:
   API_ENDPOINT: https://api.some_api
   SUMO_ENDPOINT: https://some_endpoint
+  DOPPLER_ENDPOINT: wss://doppler.bosh-lite.com:443
   FIREHOSE_SUBSCRIPTION_ID: cloudfoundry-sumologic-nozzle
   CLOUDFOUNDRY_USER: firehose_user_authorized
   CLOUDFOUNDRY_PASSWORD: password_firehose_user_authorized
-  EVENTS: LogMessage
+  EVENTS: LogMessage,ValueMetric,Error,ContainerMetric
   SKIP_SSL_VALIDATION: false
   NOZZLE_POLLING_PERIOD: 15s
   LOG_EVENTS_BATCHSIZE: 200
