@@ -32,6 +32,7 @@ packages:
     # any options that you would normally specify in a cf manifest.yml, including</i>
     buildpack: https://github.com/cloudfoundry/go-buildpack.git
     command: cloudfoundry-sumologic-nozzle
+    instances: 2
     path: sumo-logic-nozzle.zip
   health_check: none
   needs_cf_credentials: true
