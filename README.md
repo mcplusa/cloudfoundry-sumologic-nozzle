@@ -11,7 +11,6 @@ Flags:  (See run command, in this document, for syntax of flags)
 --help                              Show context-sensitive help (also try --help-long and --help-man).
 --api-endpoint=                     CF API Endpoint
 --sumo-endpoint=                    SUMO-ENDPOINT Complete URL for the endpoint, copied from the Sumo Logic HTTP Source configuration
---doppler-endpoint=                 Overwrite default doppler endpoint return by /v2/info
 --subscription-id="firehose"        Cloud Foundry ID for the subscription.
 --cloudfoundry-user=                Cloud Foundry User
 --cloudfoundry-password=            Cloud Foundry Password
@@ -137,7 +136,6 @@ $ cf push cloudfoundry-sumologic-nozzle --no-start
 ```
 $ cf set-env cloudfoundry-sumologic-nozzle API_ENDPOINT https://api.[your cf system domain]
 $ cf set-env cloudfoundry-sumologic-nozzle SUMO_ENDPOINT https://sumo-endpoint
-$ cf set-env cloudfoundry-sumologic-nozzle DOPPLER_ENDPOINT: wss://doppler.bosh-lite.com:443
 $ cf set-env cloudfoundry-sumologic-nozzle FIREHOSE_SUBSCRIPTION_ID cloudfoundry-sumologic-nozzle
 $ cf set-env cloudfoundry-sumologic-nozzle CLOUDFOUNDRY_USER [your doppler.firehose enabled user]
 $ cf set-env cloudfoundry-sumologic-nozzle CLOUDFOUNDRY_PASSWORD [your doppler.firehose enabled user password]
