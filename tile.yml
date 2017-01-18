@@ -93,11 +93,6 @@ forms:
     type: string
     label: Cloud Foundry API Endpoint
     description: URL to CF API Endpoint
-  - name: doppler-endpoint
-    type: string
-    label: Doppler Endpoint
-    description: Overwrite default doppler endpoint return by /v2/info
-    optional: true
   - name: cloudfoundry-user
     type: string
     label: Cloud Foundry User

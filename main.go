@@ -20,7 +20,6 @@ import (
 var (
 	apiEndpoint                 = kingpin.Flag("api-endpoint", "URL to CF API Endpoint").OverrideDefaultFromEnvar("API_ENDPOINT").String()
 	sumoEndpoint                = kingpin.Flag("sumo-endpoint", "SUMO-ENDPOINT Complete URL for the endpoint, copied from the Sumo Logic HTTP Source configuration").OverrideDefaultFromEnvar("SUMO_ENDPOINT").String()
-	dopplerEndpoint             = kingpin.Flag("doppler-endpoint", "Overwrite default doppler endpoint return by /v2/info").OverrideDefaultFromEnvar("DOPPLER_ENDPOINT").String()
 	subscriptionId              = kingpin.Flag("subscription-id", "Cloud Foundry ID for the subscription.").Default("firehose").OverrideDefaultFromEnvar("FIREHOSE_SUBSCRIPTION_ID").String()
 	user                        = kingpin.Flag("cloudfoundry-user", "Cloud Foundry User").OverrideDefaultFromEnvar("CLOUDFOUNDRY_USER").String() //user created in CF, authorized to connect the firehose
 	password                    = kingpin.Flag("cloudfoundry-password", "Cloud Foundry Password").OverrideDefaultFromEnvar("CLOUDFOUNDRY_PASSWORD").String()
@@ -85,10 +84,6 @@ func main() {
 		logging.Error.Fatal("Error setting up CF Client: ", errCfClient)
 		os.Exit(1)
 	}
-	if len(*dopplerEndpoint) > 0 {
-		cfClient.Endpoint.DopplerEndpoint = *dopplerEndpoint
-	}
-	logging.Info.Printf("Using %s as doppler endpoint", cfClient.Endpoint.DopplerEndpoint)
 
 	//Creating Caching
 	var cachingClient caching.Caching
@@ -123,7 +118,6 @@ func main() {
 	for i := 0; i < len(apps); i++ {
 		logging.Info.Printf("[%d] "+apps[i].Name+" GUID: "+apps[i].Guid, i+1)
 	}
-	//Let's start the goRoutine
 	cachingClient.PerformPoollingCaching(*tickerTime)
 
 	firehoseConfig := &firehoseclient.FirehoseConfig{
